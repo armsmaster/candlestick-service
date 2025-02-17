@@ -5,6 +5,10 @@ from app.core.date_time import Timestamp
 from app.core.entities import Timeframe, Candle
 
 
+class MarketDataAdapterException(Exception):
+    pass
+
+
 @dataclass
 class MarketDataRequest:
     board: str
