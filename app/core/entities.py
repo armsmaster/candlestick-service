@@ -12,14 +12,19 @@ class Timeframe(Enum):
 
 
 @dataclass
-class Security:
+class Object:
+    pass
+
+
+@dataclass
+class Security(Object):
 
     ticker: str
     board: str
 
 
 @dataclass
-class Candle:
+class Candle(Object):
 
     security: Security
     timeframe: Timeframe
