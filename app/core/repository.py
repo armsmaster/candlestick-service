@@ -13,6 +13,12 @@ class CandleRepositoryRequest:
     n_candles: int
 
 
+@dataclass
+class CandlePeriod:
+    time_from: Timestamp
+    time_till: Timestamp
+
+
 class IRepository(ABC):
 
     @abstractmethod
@@ -38,7 +44,21 @@ class ISecurityRepository(IRepository):
 class ICandleRepository(IRepository):
 
     @abstractmethod
-    def get_periods(self, security: Security):
+    def get_periods(self, security: Security) -> list[CandlePeriod]:
+        """
+        Get non-overlaping time intervals present in DB.
+
+        Use: no need to load data from these periods from Market Data Source.
+        """
+        pass
+
+    @abstractmethod
+    def add_period(self, security: Security, period: CandlePeriod):
+        """
+        Register time interval as present in DB.
+
+        To be used together with saving new candles to DB.
+        """
         pass
 
     @abstractmethod
