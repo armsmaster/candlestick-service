@@ -45,11 +45,18 @@ async def test_market_data_adapter_concurrent():
             time_from=Timestamp("2024-12-17"),
             time_till=Timestamp("2025-02-17"),
         ),
+        MarketDataRequest(
+            ticker="LKOH",
+            board="TQBR",
+            timeframe=Timeframe.H1,
+            time_from=Timestamp("2024-12-17"),
+            time_till=Timestamp("2025-02-17"),
+        ),
     ]
     adapters = [MarketDataAdapter(request=request) for request in requests]
     candles_lists = await asyncio.gather(*[adapter.load() for adapter in adapters])
     assert isinstance(candles_lists, list)
-    assert len(candles_lists) == 2
+    assert len(candles_lists) == len(requests)
     assert isinstance(candles_lists[0], list)
     assert isinstance(candles_lists[0][0], Candle)
     assert isinstance(candles_lists[1][0], Candle)
