@@ -11,19 +11,19 @@ class Timeframe(Enum):
     H1 = "H1"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Object:
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Security(Object):
 
     ticker: str
     board: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class Candle(Object):
 
     security: Security
