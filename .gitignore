@@ -3,3 +3,4 @@ env
 __pycache__
 *.py[cdo]
 *.pytest_cache
+db-data
