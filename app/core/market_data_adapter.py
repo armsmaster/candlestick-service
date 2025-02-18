@@ -25,5 +25,5 @@ class IMarketDataAdapter(ABC):
         pass
 
     @abstractmethod
-    def load(self) -> list[Candle]:
+    async def load(self) -> list[Candle]:
         pass
