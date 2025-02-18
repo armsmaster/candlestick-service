@@ -1,3 +1,5 @@
 pytest
 ipython
 aiohttp
+pytest
+pytest-asyncio
