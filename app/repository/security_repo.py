@@ -27,7 +27,7 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         await self.connection.execute(insert_stmt, items_to_insert)
         return
 
-    def update(self, items: list[Security]):
+    async def update(self, items: list[Security]):
         """Not Implemented"""
         raise NotImplementedError
 
