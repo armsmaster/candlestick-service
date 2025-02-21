@@ -3,7 +3,9 @@ ipython
 aiohttp
 pytest
 pytest-asyncio
+pytest-dotenv
 alembic
 sqlalchemy[asyncio]
 python-dotenv
 psycopg
+asyncpg

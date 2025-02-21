@@ -1,28 +1,26 @@
 from os import environ
-from sqlalchemy import create_engine, Connection
-from pytest import fixture
-from dotenv import load_dotenv
+import asyncio
+import pytest
+
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncConnection
 
 from app.core.entities import Security
 from app.repository.security_repo import SecurityRepository
 
-load_dotenv()
-
 
 class UOW:
 
-    def __init__(self, connection: Connection):
+    def __init__(self, connection: AsyncConnection):
         self.connection = connection
 
-    def __enter__(self):
+    async def __aenter__(self):
         pass
 
-    def __exit__(self, exc_type, exc_val, traceback) -> bool:
-        self.connection.commit()
+    async def __aexit__(self, exc_type, exc_val, traceback) -> bool:
+        await self.connection.commit()
 
 
-@fixture
-def connection():
+async def connection_factory():
     url = "{drivername}://{username}:{password}@{host}:{port}/{database}".format(
         drivername=environ.get("DB_DRIVER"),
         username=environ.get("POSTGRES_USER"),
@@ -31,27 +29,68 @@ def connection():
         port=environ.get("PG_PORT"),
         database=environ.get("POSTGRES_DB"),
     )
-    engine = create_engine(url)
+    try:
+        engine: AsyncEngine = create_async_engine(url, echo=False)
+        while True:
+            async with engine.connect() as connection:
+                yield connection
+    finally:
+        await engine.dispose()
 
-    with engine.connect() as connection:
-        yield connection
 
-
-def test_security_repository(connection: Connection):
-    security = Security(ticker="AAA", board="BBB")
-
-    with UOW(connection):
+async def create_many_securities(prefix: str, connections=connection_factory()):
+    connection = await anext(connections)
+    securities = [
+        Security(ticker=f"{prefix}_{i}", board="TEST_BOARD") for i in range(1000)
+    ]
+    async with UOW(connection):
         repo = SecurityRepository(connection=connection)
-        repo.create([security])
+        await repo.create(securities)
 
-    with UOW(connection):
+    async with UOW(connection):
         repo = SecurityRepository(connection=connection)
-        assert security in repo.all()
+        await repo.delete(securities)
 
-    with UOW(connection):
-        repo = SecurityRepository(connection=connection)
-        repo.delete([security])
 
-    with UOW(connection):
+@pytest.mark.asyncio
+async def test_security_repository(connections=connection_factory()):
+    security = Security(ticker="TEST_TICKER", board="TEST_BOARD")
+    connection = await anext(connections)
+
+    async with UOW(connection):
         repo = SecurityRepository(connection=connection)
-        assert security not in repo.all()
+        await repo.create([security])
+
+    async with UOW(connection):
+        repo = SecurityRepository(connection=connection)
+        all = await repo.all()
+        assert security in all
+
+    async with UOW(connection):
+        repo = SecurityRepository(connection=connection)
+        await repo.delete([security])
+
+    async with UOW(connection):
+        repo = SecurityRepository(connection=connection)
+        all = await repo.all()
+        assert security not in all
+
+
+@pytest.mark.asyncio
+async def test_1000_mono():
+    await asyncio.gather(
+        create_many_securities("A", connections=connection_factory()),
+    )
+
+
+@pytest.mark.asyncio
+async def test_1000_concurrent():
+    await asyncio.gather(
+        *[
+            create_many_securities(
+                prefix=f"A{i:02.0f}",
+                connections=connection_factory(),
+            )
+            for i in range(3)
+        ]
+    )
