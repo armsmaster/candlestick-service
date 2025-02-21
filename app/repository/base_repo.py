@@ -1,11 +1,9 @@
-from sqlalchemy import Engine
-from sqlalchemy.orm import Session
+from sqlalchemy import Connection
 
-from app.core.entities import Object
 from app.core.repository import IRepository
 
 
 class BaseRepository(IRepository):
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, connection: Connection):
+        self.connection = connection
