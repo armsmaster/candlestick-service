@@ -10,9 +10,10 @@ from app.repository.metadata import security_table
 
 class SecurityRepository(BaseRepository, ISecurityRepository):
 
-    def create(self, items: list[Security]):
+    async def create(self, items: list[Security]):
         filter = self.__construct_filter(items)
-        existing_set = set(self.select_entities(filter=filter))
+        entities = await self.select_entities(filter=filter)
+        existing_set = set(entities)
 
         items_to_insert = [item for item in items if item not in existing_set]
         if not items_to_insert:
@@ -23,20 +24,21 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
             {"id": uuid4(), "ticker": item.ticker, "board": item.board}
             for item in items_to_insert
         ]
-        self.connection.execute(insert_stmt, items_to_insert)
+        await self.connection.execute(insert_stmt, items_to_insert)
         return
 
     def update(self, items: list[Security]):
         """Not Implemented"""
         raise NotImplementedError
 
-    def delete(self, items: list[Security]):
+    async def delete(self, items: list[Security]):
         filter = self.__construct_filter(items)
         delete_stmt = delete(security_table).where(filter)
-        self.connection.execute(delete_stmt)
+        await self.connection.execute(delete_stmt)
 
-    def all(self) -> list[Security]:
-        return self.select_entities()
+    async def all(self) -> list[Security]:
+        out = await self.select_entities()
+        return out
 
     def __construct_filter(self, items: list[Security]):
         cols = security_table.c
@@ -49,10 +51,8 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         ]
         return or_(*ands)
 
-    def select_entities(self, filter=None) -> list[Security]:
+    async def select_entities(self, filter=None) -> list[Security]:
         where_clause = filter if filter is not None else 1 == 1
         existing_stmt = select(security_table.c["ticker", "board"]).where(where_clause)
-        return {
-            Security(ticker=ticker, board=board)
-            for ticker, board in self.connection.execute(existing_stmt)
-        }
+        entities = await self.connection.execute(existing_stmt)
+        return {Security(ticker=ticker, board=board) for ticker, board in entities}
