@@ -22,29 +22,29 @@ class CandlePeriod:
 class IRepository(ABC):
 
     @abstractmethod
-    def create(self, items: list[Object]):
+    async def create(self, items: list[Object]):
         pass
 
     @abstractmethod
-    def update(self, items: list[Object]):
+    async def update(self, items: list[Object]):
         pass
 
     @abstractmethod
-    def delete(self, items: list[Object]):
+    async def delete(self, items: list[Object]):
         pass
 
 
 class ISecurityRepository(IRepository):
 
     @abstractmethod
-    def all(self) -> list[Security]:
+    async def all(self) -> list[Security]:
         pass
 
 
 class ICandleRepository(IRepository):
 
     @abstractmethod
-    def get_periods(self, security: Security) -> list[CandlePeriod]:
+    async def get_periods(self, security: Security) -> list[CandlePeriod]:
         """
         Get non-overlaping time intervals present in DB.
 
@@ -53,7 +53,7 @@ class ICandleRepository(IRepository):
         pass
 
     @abstractmethod
-    def add_period(self, security: Security, period: CandlePeriod):
+    async def add_period(self, security: Security, period: CandlePeriod):
         """
         Register time interval as present in DB.
 
@@ -62,5 +62,5 @@ class ICandleRepository(IRepository):
         pass
 
     @abstractmethod
-    def get(self, request: CandleRepositoryRequest) -> list[Candle]:
+    async def get(self, request: CandleRepositoryRequest) -> list[Candle]:
         pass
