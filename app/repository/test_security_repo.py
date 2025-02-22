@@ -84,7 +84,7 @@ async def test_1000_mono():
 
 
 @pytest.mark.asyncio
-async def test_1000_concurrent():
+async def test_1000_x3_concurrent():
     await asyncio.gather(
         *[
             create_many_securities(
