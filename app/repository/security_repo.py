@@ -1,5 +1,5 @@
 from uuid import uuid4
-from sqlalchemy import insert, select, delete, and_, or_
+from sqlalchemy import insert, select, delete, and_, or_, Table
 
 from app.core.entities import Security
 from app.core.repository import ISecurityRepository
@@ -10,16 +10,37 @@ from app.repository.metadata import security_table
 
 class SecurityRepository(BaseRepository, ISecurityRepository):
 
+    table = security_table
+    field_mapping = {
+        "ticker": "ticker",
+        "board": "board",
+    }
+
     async def create(self, items: list[Security]):
-        filter = self.__construct_filter(items)
-        entities = await self.select_entities(filter=filter)
-        existing_set = set(entities)
+        filter = self._construct_filter(
+            items,
+            self.table,
+            self.field_mapping,
+        )
+        raw_existing_items = await self._select_raw(
+            table=self.table,
+            fields=["ticker", "board"],
+            filter=filter,
+        )
+        existing_items = [
+            Security(
+                ticker=item["ticker"],
+                board=item["board"],
+            )
+            for item in raw_existing_items
+        ]
+        existing_set = set(existing_items)
 
         items_to_insert = [item for item in items if item not in existing_set]
         if not items_to_insert:
             return
 
-        insert_stmt = insert(security_table)
+        insert_stmt = insert(self.table)
         items_to_insert = [
             {"id": uuid4(), "ticker": item.ticker, "board": item.board}
             for item in items_to_insert
@@ -32,27 +53,21 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         raise NotImplementedError
 
     async def delete(self, items: list[Security]):
-        filter = self.__construct_filter(items)
-        delete_stmt = delete(security_table).where(filter)
+        filter = self._construct_filter(
+            items,
+            self.table,
+            self.field_mapping,
+        )
+        delete_stmt = delete(self.table).where(filter)
         await self.connection.execute(delete_stmt)
 
     async def all(self) -> list[Security]:
-        out = await self.select_entities()
-        return out
-
-    def __construct_filter(self, items: list[Security]):
-        cols = security_table.c
-        ands = [
-            and_(
-                cols.ticker == item.ticker,
-                cols.board == item.board,
+        raw_items = await self._select_raw(table=self.table, fields=["ticker", "board"])
+        items = [
+            Security(
+                ticker=item["ticker"],
+                board=item["board"],
             )
-            for item in items
+            for item in raw_items
         ]
-        return or_(*ands)
-
-    async def select_entities(self, filter=None) -> list[Security]:
-        where_clause = filter if filter is not None else 1 == 1
-        existing_stmt = select(security_table.c["ticker", "board"]).where(where_clause)
-        entities = await self.connection.execute(existing_stmt)
-        return {Security(ticker=ticker, board=board) for ticker, board in entities}
+        return items
