@@ -12,19 +12,19 @@ class Timeframe(Enum):
 
 
 @dataclass(frozen=True)
-class Object:
+class Entity:
     pass
 
 
 @dataclass(frozen=True)
-class Security(Object):
+class Security(Entity):
 
     ticker: str
     board: str
 
 
 @dataclass(frozen=True)
-class Candle(Object):
+class Candle(Entity):
 
     security: Security
     timeframe: Timeframe
@@ -33,3 +33,12 @@ class Candle(Object):
     high: float
     low: float
     close: float
+
+
+@dataclass(frozen=True)
+class CandleSpan(Entity):
+
+    security: Security
+    timeframe: Timeframe
+    date_from: Timestamp
+    date_till: Timestamp

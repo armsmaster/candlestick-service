@@ -1,11 +1,15 @@
 from os import environ
 import asyncio
 import pytest
+from datetime import timedelta
+from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncConnection
 
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Candle, Timeframe
+from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository.candle_repository import ICandleRepository
 from app.repository.security_repo import SecurityRepository
 from app.repository.candle_repo import CandleRepository
 
@@ -40,30 +44,157 @@ async def connection_factory():
         await engine.dispose()
 
 
-@pytest.mark.asyncio
-async def test_candle_repository(connections=connection_factory()):
-    security = Security(ticker="T_TICKER", board="T_BOARD")
+def security_repository_factory(connection: AsyncConnection) -> ISecurityRepository:
+    return SecurityRepository(connection)
+
+
+def candle_repository_factory(connection: AsyncConnection) -> ICandleRepository:
+    return CandleRepository(connection)
+
+
+async def test_create_candle(connections=connection_factory()):
+    test_ticker = uuid4().hex
+    test_board = uuid4().hex
+
+    connection = await anext(connections)
+    security = Security(ticker=test_ticker, board=test_board)
+    candle = Candle(
+        security=security,
+        timeframe=Timeframe.H1,
+        timestamp=Timestamp.now("Europe/Moscow"),
+        open=100,
+        high=101,
+        low=99,
+        close=100.1,
+    )
+
+    async with UOW(connection):
+        security_repo = security_repository_factory(connection)
+        candle_repo = candle_repository_factory(connection)
+
+        await security_repo.add([security])
+        await candle_repo.add([candle])
+
+        candle_repo = candle_repo.filter_by_security(security)
+        count = await candle_repo.count()
+        assert count == 1
+
+        candle_records = [r async for r in candle_repo]
+        await candle_repo.remove(candle_records)
+
+        count = await candle_repo.count()
+        assert count == 0
+
+        security_repo = security_repo.filter_by_ticker(test_ticker)
+        security_records = [r async for r in security_repo]
+        await security_repo.remove(security_records)
+        count = await security_repo.count()
+        assert count == 0
+
+
+async def test_create_many_candles(connections=connection_factory()):
+    connection = await anext(connections)
+    test_ticker = uuid4().hex
+    test_board = uuid4().hex
+    security = Security(
+        ticker=test_ticker,
+        board=test_board,
+    )
+
+    now = Timestamp.now()
     candles = [
         Candle(
             security=security,
             timeframe=Timeframe.H1,
-            timestamp=Timestamp("2025-02-21 18:50:00"),
-            open=100.0,
-            high=100.0,
-            low=100.0,
-            close=100.0,
+            timestamp=Timestamp(now.dt - timedelta(minutes=i)),
+            open=100,
+            high=101.0,
+            low=99.9,
+            close=100.25,
         )
+        for i in range(1000)
     ]
+
+    async with UOW(connection):
+        security_repo = security_repository_factory(connection)
+        candle_repo = candle_repository_factory(connection)
+
+        await security_repo.add([security])
+        await candle_repo.add(candles)
+
+        candle_repo = candle_repo.filter_by_security(security)
+        count = await candle_repo.count()
+        assert count == 1000
+
+        records = [r async for r in candle_repo]
+        assert set([r.entity for r in records]) == set(candles)
+
+        await candle_repo.remove(records)
+        candle_repo = candle_repo.filter_by_security(security)
+        count = await candle_repo.count()
+        assert count == 0
+
+        security_repo = security_repo.filter_by_ticker(test_ticker)
+        security_records = [r async for r in security_repo]
+        await security_repo.remove(security_records)
+        count = await security_repo.count()
+        assert count == 0
+
+
+async def test_slicing(connections=connection_factory()):
     connection = await anext(connections)
+    test_ticker = uuid4().hex
+    test_board = uuid4().hex
+    security = Security(
+        ticker=test_ticker,
+        board=test_board,
+    )
+
+    now = Timestamp.now()
+    candles = [
+        Candle(
+            security=security,
+            timeframe=Timeframe.H1,
+            timestamp=Timestamp(now.dt - timedelta(minutes=i)),
+            open=100,
+            high=101.0,
+            low=99.9,
+            close=100.25,
+        )
+        for i in range(1000)
+    ]
 
     async with UOW(connection):
-        repo = SecurityRepository(connection=connection)
-        await repo.create([security])
+        security_repo = security_repository_factory(connection)
+        candle_repo = candle_repository_factory(connection)
 
-    async with UOW(connection):
-        repo = CandleRepository(connection=connection)
-        await repo.create(candles)
+        await security_repo.add([security])
+        await candle_repo.add(candles)
 
-    # async with UOW(connection):
-    #     repo = SecurityRepository(connection=connection)
-    #     await repo.delete([security])
+        candle_repo = candle_repo.filter_by_security(security)
+        count = await candle_repo.count()
+        assert count == 1000
+
+        retrieved_candles = []
+        i, batch_size = 0, 100
+        while True:
+            batch_repo = candle_repo[i, i + batch_size]
+            items = [r.entity async for r in batch_repo]
+            retrieved_candles += items
+            if not items:
+                break
+            i += batch_size
+
+        assert set(candles) == set(retrieved_candles)
+
+        records = [r async for r in candle_repo]
+        await candle_repo.remove(records)
+
+        count = await candle_repo.count()
+        assert count == 0
+
+        security_repo = security_repo.filter_by_ticker(test_ticker)
+        security_records = [r async for r in security_repo]
+        await security_repo.remove(security_records)
+        count = await security_repo.count()
+        assert count == 0

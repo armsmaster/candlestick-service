@@ -19,7 +19,7 @@ config = context.config
 
 
 url = "{drivername}://{username}:{password}@{host}:{port}/{database}".format(
-    drivername=environ.get("DB_DRIVER"),
+    drivername=environ.get("ALEMBIC_DB_DRIVER"),
     username=environ.get("POSTGRES_USER"),
     password=environ.get("POSTGRES_PASSWORD"),
     host=environ.get("PG_HOST"),

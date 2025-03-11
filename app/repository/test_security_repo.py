@@ -2,9 +2,12 @@ from os import environ
 import asyncio
 import pytest
 
+from uuid import uuid4
+
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncConnection
 
 from app.core.entities import Security
+from app.core.repository.security_repository import ISecurityRepository
 from app.repository.security_repo import SecurityRepository
 
 
@@ -38,59 +41,92 @@ async def connection_factory():
         await engine.dispose()
 
 
-async def create_many_securities(prefix: str, connections=connection_factory()):
+def security_repository_factory(connection: AsyncConnection) -> ISecurityRepository:
+    return SecurityRepository(connection)
+
+
+async def test_create_security(connections=connection_factory()):
+    test_ticker = uuid4().hex
+    test_board = uuid4().hex
     connection = await anext(connections)
+    security = Security(ticker=test_ticker, board=test_board)
+
+    async with UOW(connection):
+        repo = security_repository_factory(connection)
+
+        await repo.add([security])  # create security
+        await repo.add([security])  # try create duplicate
+
+        repo = repo.filter_by_ticker(test_ticker)
+
+        # check only one exists
+        count = await repo.count()
+        assert count == 1
+
+        # clean up
+        records = [r async for r in repo]
+        await repo.remove(records)
+
+        # check test record deleted
+        count = await repo.count()
+        assert count == 0
+
+
+async def test_create_many_securities(connections=connection_factory()):
+    connection = await anext(connections)
+    test_board = uuid4().hex
     securities = [
-        Security(ticker=f"{prefix}_{i}", board="TEST_BOARD") for i in range(1000)
+        Security(
+            ticker=uuid4().hex,
+            board=test_board,
+        )
+        for _ in range(1000)
     ]
     async with UOW(connection):
-        repo = SecurityRepository(connection=connection)
-        await repo.create(securities)
+        repo = security_repository_factory(connection)
+        await repo.add(securities)
 
-    async with UOW(connection):
-        repo = SecurityRepository(connection=connection)
-        await repo.delete(securities)
+        repo = repo.filter_by_board(test_board)
+        count = await repo.count()
+        assert count == 1000
+
+        records = [r async for r in repo]
+        await repo.remove(records)
+
+        count = await repo.count()
+        assert count == 0
 
 
-@pytest.mark.asyncio
-async def test_security_repository(connections=connection_factory()):
-    security = Security(ticker="TEST_TICKER", board="TEST_BOARD")
+async def test_slicing(connections=connection_factory()):
     connection = await anext(connections)
-
+    test_board = uuid4().hex
+    securities = [
+        Security(
+            ticker=uuid4().hex,
+            board=test_board,
+        )
+        for _ in range(1000)
+    ]
     async with UOW(connection):
-        repo = SecurityRepository(connection=connection)
-        await repo.create([security])
+        repo = security_repository_factory(connection)
+        await repo.add(securities)
 
-    async with UOW(connection):
-        repo = SecurityRepository(connection=connection)
-        all = await repo.all()
-        assert security in all
+        repo = repo.filter_by_board(test_board)
 
-    async with UOW(connection):
-        repo = SecurityRepository(connection=connection)
-        await repo.delete([security])
+        retrieved_securities = []
+        i, batch_size = 0, 100
+        while True:
+            batch_repo = repo[i, i + batch_size]
+            items = [r.entity async for r in batch_repo]
+            retrieved_securities += items
+            if not items:
+                break
+            i += batch_size
 
-    async with UOW(connection):
-        repo = SecurityRepository(connection=connection)
-        all = await repo.all()
-        assert security not in all
+        assert set(securities) == set(retrieved_securities)
 
+        records = [r async for r in repo]
+        await repo.remove(records)
 
-@pytest.mark.asyncio
-async def test_1000_mono():
-    await asyncio.gather(
-        create_many_securities("A", connections=connection_factory()),
-    )
-
-
-@pytest.mark.asyncio
-async def test_1000_x3_concurrent():
-    await asyncio.gather(
-        *[
-            create_many_securities(
-                prefix=f"A{i:02.0f}",
-                connections=connection_factory(),
-            )
-            for i in range(3)
-        ]
-    )
+        count = await repo.count()
+        assert count == 0
