@@ -24,7 +24,7 @@ async def test_market_data_adapter_mono():
     adapter = MarketDataAdapter(request=request)
     candles = await adapter.load()
     assert isinstance(candles, list)
-    assert len(candles) == 656
+    assert len(candles) == 674
     assert isinstance(candles[0], Candle)
 
 
@@ -60,5 +60,5 @@ async def test_market_data_adapter_concurrent():
     assert isinstance(candles_lists[0], list)
     assert isinstance(candles_lists[0][0], Candle)
     assert isinstance(candles_lists[1][0], Candle)
-    assert len(candles_lists[0]) == 656
-    assert len(candles_lists[1]) == 656
+    assert len(candles_lists[0]) == 674
+    assert len(candles_lists[1]) == 674
