@@ -1,73 +1,83 @@
-from uuid import uuid4
-from sqlalchemy import insert, select, delete, and_, or_, Table
+from dataclasses import dataclass
+
+from uuid import UUID, uuid4
+
+from sqlalchemy import Connection
+from sqlalchemy import select, delete, and_, or_, Table
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import Row
 
 from app.core.entities import Security
-from app.core.repository import ISecurityRepository
+from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository.base import Record
 
-from app.repository.base_repo import BaseRepository
+from app.repository.base_repo import BaseRepository, Filter, FilterGroup
 from app.repository.metadata import security_table
 
 
 class SecurityRepository(BaseRepository, ISecurityRepository):
 
     table = security_table
-    field_mapping = {
-        "ticker": "ticker",
-        "board": "board",
-    }
 
-    async def create(self, items: list[Security]):
-        filter = self._construct_filter(
-            items,
-            self.table,
-            self.field_mapping,
-        )
-        raw_existing_items = await self._select_raw(
+    def __init__(
+        self,
+        connection: Connection | None = None,
+        repo: ISecurityRepository | None = None,
+    ):
+        super().__init__(
+            connection=connection if repo is None else repo._connection,
             table=self.table,
-            fields=["ticker", "board"],
-            filter=filter,
+            filters=[] if repo is None else list(repo._filters),
+            order_by=["ticker", "board"] if repo is None else list(repo._order_by),
         )
-        existing_items = [
-            Security(
-                ticker=item["ticker"],
-                board=item["board"],
-            )
-            for item in raw_existing_items
-        ]
-        existing_set = set(existing_items)
 
-        items_to_insert = [item for item in items if item not in existing_set]
-        if not items_to_insert:
+    def _row_to_record(self, row: Row) -> Record:
+        record = Record(
+            id=row.id,
+            entity=Security(
+                ticker=row.ticker,
+                board=row.board,
+            ),
+        )
+        return record
+
+    async def add(self, items: list[Security]) -> None:
+        if len(items) == 0:
             return
-
-        insert_stmt = insert(self.table)
+        insert_stmt = insert(self.table).on_conflict_do_nothing()
         items_to_insert = [
-            {"id": uuid4(), "ticker": item.ticker, "board": item.board}
-            for item in items_to_insert
+            {
+                "id": uuid4(),
+                "ticker": item.ticker,
+                "board": item.board,
+            }
+            for item in items
         ]
-        await self.connection.execute(insert_stmt, items_to_insert)
-        return
+        await self._connection.execute(insert_stmt, items_to_insert)
 
-    async def update(self, items: list[Security]):
-        """Not Implemented"""
-        raise NotImplementedError
-
-    async def delete(self, items: list[Security]):
-        filter = self._construct_filter(
-            items,
-            self.table,
-            self.field_mapping,
+    async def remove(self, items: list[Record]):
+        statement = self.table.delete().where(
+            or_(False, *[self.table.c["id"] == i.id for i in items])
         )
-        delete_stmt = delete(self.table).where(filter)
-        await self.connection.execute(delete_stmt)
+        await self._connection.execute(statement)
 
-    async def all(self) -> list[Security]:
-        raw_items = await self._select_raw(table=self.table, fields=["ticker", "board"])
-        items = [
-            Security(
-                ticker=item["ticker"],
-                board=item["board"],
-            )
-            for item in raw_items
-        ]
-        return items
+    def __getitem__(self, s):
+        sl = slice(*s)
+
+        if sl.step is not None:
+            raise NotImplementedError(f"step={sl.step}")
+
+        repo = SecurityRepository(repo=self)
+        repo._limit = sl.stop - sl.start
+        repo._offset = sl.start
+        return repo
+
+    def filter_by_board(self, board):
+        repo = SecurityRepository(repo=self)
+        repo._filters += [self.table.c["board"] == board]
+        return repo
+
+    def filter_by_ticker(self, ticker):
+        repo = SecurityRepository(repo=self)
+        repo._filters += [self.table.c["ticker"] == ticker]
+        return repo

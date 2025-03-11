@@ -1,5 +1,5 @@
 from sqlalchemy import MetaData
-from sqlalchemy import Table, Column, Integer, String, UUID, Float, DateTime
+from sqlalchemy import Table, Column, Integer, String, UUID, Float, DateTime, Date
 
 metadata_obj = MetaData()
 
@@ -17,9 +17,19 @@ candle_table = Table(
     Column("id", UUID, primary_key=True),
     Column("security_id", UUID),
     Column("timeframe", String),
-    Column("timestamp", DateTime),
+    Column("timestamp", DateTime(timezone=True)),
     Column("open", Float),
     Column("high", Float),
     Column("low", Float),
     Column("close", Float),
+)
+
+candle_span_table = Table(
+    "candle_span",
+    metadata_obj,
+    Column("id", UUID, primary_key=True),
+    Column("security_id", UUID),
+    Column("timeframe", String),
+    Column("date_from", Date),
+    Column("date_till", Date),
 )
