@@ -1,6 +1,8 @@
 import asyncio
 import aiohttp
 from urllib.parse import urlencode
+from pytz import timezone
+
 
 from app.core.date_time import Timestamp
 from app.core.entities import Candle, Security
@@ -109,10 +111,11 @@ class MarketDataAdapter(IMarketDataAdapter):
         return [self.process_row(mapping, item) for item in data]
 
     def process_row(self, mapping: dict[str, int], data: list) -> Candle:
+        timestamp_str: str = data[mapping["begin"]]
         return Candle(
             security=self.security,
             timeframe=self.timeframe,
-            timestamp=Timestamp(data[mapping["begin"]]),
+            timestamp=Timestamp(timestamp=timestamp_str, tz="Europe/Moscow"),
             open=data[mapping["open"]],
             high=data[mapping["high"]],
             low=data[mapping["low"]],
