@@ -1,5 +1,5 @@
 from typing import overload
-from datetime import datetime, date, UTC
+from datetime import datetime, date, UTC, timedelta
 from pytz import timezone
 
 
@@ -85,3 +85,9 @@ class Timestamp:
 
     def __str__(self):
         return self.data.isoformat()
+
+    def __add__(self, value: int):
+        return Timestamp(self.data + timedelta(days=value))
+
+    def __sub__(self, value: int):
+        return Timestamp(self.data - timedelta(days=value))
