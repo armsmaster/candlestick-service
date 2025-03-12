@@ -1,6 +1,8 @@
 import asyncio
 import aiohttp
 from urllib.parse import urlencode
+from pytz import timezone
+
 
 from app.core.date_time import Timestamp
 from app.core.entities import Candle, Security
@@ -19,15 +21,23 @@ class MarketDataAdapter(IMarketDataAdapter):
     MARKETS = constants.MARKETS
     INTERVALS = constants.INTERVALS
 
-    def __init__(self, request: MarketDataRequest):
+    def __init__(self):
+        pass
+
+    def _init(self, request: MarketDataRequest) -> None:
         self.ticker = request.ticker
         self.board = request.board
         self.time_from = request.time_from
         self.time_till = request.time_till
         self.timeframe = request.timeframe
+        self._candles = []
         self.init_market()
         self.init_interval()
         self.init_security()
+
+    @property
+    def candles(self) -> list[Candle]:
+        return self._candles
 
     def init_market(self):
         try:
@@ -46,7 +56,8 @@ class MarketDataAdapter(IMarketDataAdapter):
     def init_security(self):
         self.security = Security(ticker=self.ticker, board=self.board)
 
-    async def load(self):
+    async def load(self, request: MarketDataRequest):
+        self._init(request)
         self.candles_set = set()
         queue = asyncio.Queue()
         n_consumers = constants.N_CONSUMERS
@@ -60,7 +71,7 @@ class MarketDataAdapter(IMarketDataAdapter):
 
         candles = list(self.candles_set)
         candles.sort(key=lambda x: x.timestamp)
-        return candles
+        self._candles = candles
 
     async def produce(self, queue: asyncio.Queue):
         i = 0
@@ -109,10 +120,11 @@ class MarketDataAdapter(IMarketDataAdapter):
         return [self.process_row(mapping, item) for item in data]
 
     def process_row(self, mapping: dict[str, int], data: list) -> Candle:
+        timestamp_str: str = data[mapping["begin"]]
         return Candle(
             security=self.security,
             timeframe=self.timeframe,
-            timestamp=Timestamp(data[mapping["begin"]]),
+            timestamp=Timestamp(timestamp=timestamp_str, tz="Europe/Moscow"),
             open=data[mapping["open"]],
             high=data[mapping["high"]],
             low=data[mapping["low"]],
