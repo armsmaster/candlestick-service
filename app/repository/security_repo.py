@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from typing import override
 
 from uuid import UUID, uuid4
 
@@ -19,6 +19,7 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
 
     table = security_table
 
+    @override
     def __init__(
         self,
         connection: Connection | None = None,
@@ -31,6 +32,7 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
             order_by=["ticker", "board"] if repo is None else list(repo._order_by),
         )
 
+    @override
     def _row_to_record(self, row: Row) -> Record:
         record = Record(
             id=row.id,
@@ -41,6 +43,7 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         )
         return record
 
+    @override
     async def add(self, items: list[Security]) -> None:
         if len(items) == 0:
             return
@@ -55,12 +58,14 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         ]
         await self._connection.execute(insert_stmt, items_to_insert)
 
+    @override
     async def remove(self, items: list[Record]):
         statement = self.table.delete().where(
             or_(False, *[self.table.c["id"] == i.id for i in items])
         )
         await self._connection.execute(statement)
 
+    @override
     def __getitem__(self, s):
         sl = slice(*s)
 
@@ -72,11 +77,13 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         repo._offset = sl.start
         return repo
 
+    @override
     def filter_by_board(self, board):
         repo = SecurityRepository(repo=self)
         repo._filters += [self.table.c["board"] == board]
         return repo
 
+    @override
     def filter_by_ticker(self, ticker):
         repo = SecurityRepository(repo=self)
         repo._filters += [self.table.c["ticker"] == ticker]

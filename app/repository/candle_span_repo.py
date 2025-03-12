@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from typing import override
 
 from uuid import UUID, uuid4
 
@@ -21,6 +21,7 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
 
     table = candle_span_table
 
+    @override
     def __init__(
         self,
         connection: Connection | None = None,
@@ -34,12 +35,14 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
             order_by=["date_from"] if repo is None else list(repo._order_by),
         )
 
+    @override
     def _construct_select_base(self):
         return select(candle_span_table, security_table).join(
             security_table,
             security_table.c["id"] == candle_span_table.c["security_id"],
         )
 
+    @override
     def _row_to_record(self, row: Row) -> Record:
         record = Record(
             id=row.id,
@@ -55,6 +58,7 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
         )
         return record
 
+    @override
     async def add(self, items: list[CandleSpan]) -> None:
         if len(items) == 0:
             return
@@ -84,12 +88,14 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
             self._securities[security] = record.id
             return record.id
 
+    @override
     async def remove(self, items: list[Record]):
         statement = self.table.delete().where(
             or_(False, *[self.table.c["id"] == i.id for i in items])
         )
         await self._connection.execute(statement)
 
+    @override
     def __getitem__(self, s):
         sl = slice(*s)
 
@@ -101,12 +107,14 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
         repo._offset = sl.start
         return repo
 
+    @override
     def filter_by_security(self, security):
         repo = CandleSpanRepository(repo=self)
         repo._filters += [security_table.c["ticker"] == security.ticker]
         repo._filters += [security_table.c["board"] == security.board]
         return repo
 
+    @override
     def filter_by_timeframe(self, timeframe):
         repo = CandleSpanRepository(repo=self)
         repo._filters += [self.table.c["timeframe"] == timeframe.value]

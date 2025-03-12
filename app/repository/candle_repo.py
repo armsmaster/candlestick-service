@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from typing import override
 
 from uuid import UUID, uuid4
 
@@ -21,6 +21,7 @@ class CandleRepository(BaseRepository, ICandleRepository):
 
     table = candle_table
 
+    @override
     def __init__(
         self,
         connection: Connection | None = None,
@@ -34,12 +35,14 @@ class CandleRepository(BaseRepository, ICandleRepository):
             order_by=["timestamp"] if repo is None else list(repo._order_by),
         )
 
+    @override
     def _construct_select_base(self):
         return select(self.table, security_table).join(
             security_table,
             security_table.c["id"] == candle_table.c["security_id"],
         )
 
+    @override
     def _row_to_record(self, row: Row) -> Record:
         record = Record(
             id=row.id,
@@ -58,6 +61,7 @@ class CandleRepository(BaseRepository, ICandleRepository):
         )
         return record
 
+    @override
     async def add(self, items: list[Candle]) -> None:
         if len(items) == 0:
             return
@@ -90,12 +94,14 @@ class CandleRepository(BaseRepository, ICandleRepository):
             self._securities[security] = record.id
             return record.id
 
+    @override
     async def remove(self, items: list[Record]):
         statement = self.table.delete().where(
             or_(False, *[self.table.c["id"] == i.id for i in items])
         )
         await self._connection.execute(statement)
 
+    @override
     def __getitem__(self, s):
         sl = slice(*s)
 
@@ -107,22 +113,26 @@ class CandleRepository(BaseRepository, ICandleRepository):
         repo._offset = sl.start
         return repo
 
+    @override
     def filter_by_security(self, security):
         repo = CandleRepository(repo=self)
         repo._filters += [security_table.c["ticker"] == security.ticker]
         repo._filters += [security_table.c["board"] == security.board]
         return repo
 
+    @override
     def filter_by_timeframe(self, timeframe):
         repo = CandleRepository(repo=self)
         repo._filters += [self.table.c["timeframe"] == timeframe.value]
         return repo
 
+    @override
     def filter_by_timestamp_gte(self, timestamp):
         repo = CandleRepository(repo=self)
         repo._filters += [self.table.c["timestamp"] >= timestamp.dt]
         return repo
 
+    @override
     def filter_by_timestamp_lte(self, timestamp):
         repo = CandleRepository(repo=self)
         repo._filters += [self.table.c["timestamp"] <= timestamp.dt]
