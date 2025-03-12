@@ -1,3 +1,4 @@
+from typing import overload
 from datetime import datetime, date, UTC
 from pytz import timezone
 
@@ -8,8 +9,20 @@ class TimestampException(Exception):
 
 class Timestamp:
 
-    def __init__(self, timestamp: datetime | str):
+    @overload
+    def __init__(self, timestamp: datetime): ...
 
+    @overload
+    def __init__(self, timestamp: datetime, tz: str): ...
+
+    @overload
+    def __init__(self, timestamp: str): ...
+
+    @overload
+    def __init__(self, timestamp: str, tz: str): ...
+
+    def __init__(self, timestamp: datetime | str, tz: str | None = None):
+        self.tz = timezone(tz) if tz is not None else None
         self.dt = timestamp
 
     @staticmethod
@@ -25,6 +38,7 @@ class Timestamp:
     def dt(self, timestamp: datetime | str):
         if isinstance(timestamp, datetime):
             self.data = timestamp
+            self._localize()
             return
 
         if isinstance(timestamp, date):
@@ -42,11 +56,17 @@ class Timestamp:
                     == 0
                 ):
                     self.data = self.data.date()
+                else:
+                    self._localize()
                 return
             except ValueError as e:
                 raise TimestampException(f"Invalid iso string {timestamp}")
 
         raise Exception(f"Type error: {timestamp} ({type(timestamp)})")
+
+    def _localize(self) -> None:
+        if self.tz is not None:
+            self.data = self.tz.localize(self.data)
 
     def __eq__(self, other: "Timestamp"):
         return self.data == other.data
