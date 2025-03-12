@@ -3,7 +3,9 @@ from dataclasses import dataclass
 
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Timeframe
+from app.core.unit_of_work import IUnitOfWork
 from app.core.market_data_adapter import IMarketDataAdapter
+from app.core.repository.security_repository import ISecurityRepository
 from app.core.repository.candle_repository import ICandleRepository
 from app.core.repository.candle_span_repository import ICandleSpanRepository
 
@@ -22,11 +24,13 @@ class IMarketDataLoader(ABC):
     def __init__(
         self,
         market_data_adapter: IMarketDataAdapter,
+        security_repository: ISecurityRepository,
         candle_repository: ICandleRepository,
         candle_span_repository: ICandleSpanRepository,
+        unit_of_work: IUnitOfWork,
     ):
         pass
 
     @abstractmethod
-    def load_candles(self, request: MarketDataLoaderRequest):
+    async def load_candles(self, request: MarketDataLoaderRequest):
         pass
