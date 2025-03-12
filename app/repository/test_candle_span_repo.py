@@ -91,7 +91,7 @@ async def test_create_candle_span(connections=connection_factory()):
         assert count == 0
 
 
-async def test_create_many_candles(connections=connection_factory()):
+async def test_create_many_candle_spans(connections=connection_factory()):
     connection = await anext(connections)
     test_ticker = uuid4().hex
     test_board = uuid4().hex
@@ -147,60 +147,57 @@ async def test_create_many_candles(connections=connection_factory()):
         assert count == 0
 
 
-# async def test_slicing(connections=connection_factory()):
-#     connection = await anext(connections)
-#     test_ticker = uuid4().hex
-#     test_board = uuid4().hex
-#     security = Security(
-#         ticker=test_ticker,
-#         board=test_board,
-#     )
+async def test_slicing(connections=connection_factory()):
+    connection = await anext(connections)
+    test_ticker = uuid4().hex
+    test_board = uuid4().hex
+    security = Security(
+        ticker=test_ticker,
+        board=test_board,
+    )
 
-#     now = Timestamp.now()
-#     candles = [
-#         Candle(
-#             security=security,
-#             timeframe=Timeframe.H1,
-#             timestamp=Timestamp(now.dt - timedelta(minutes=i)),
-#             open=100,
-#             high=101.0,
-#             low=99.9,
-#             close=100.25,
-#         )
-#         for i in range(1000)
-#     ]
+    t = Timestamp("2023-01-01")
+    candle_spans = [
+        CandleSpan(
+            security=security,
+            timeframe=Timeframe.H1,
+            date_from=Timestamp(t.dt + timedelta(days=i * 5)),
+            date_till=Timestamp(t.dt + timedelta(days=(i + 1) * 5)),
+        )
+        for i in range(100)
+    ]
 
-#     async with UOW(connection):
-#         security_repo = security_repository_factory(connection)
-#         candle_repo = candle_span_repository_factory(connection)
+    async with UOW(connection):
+        security_repo = security_repository_factory(connection)
+        candle_span_repo = candle_span_repository_factory(connection)
 
-#         await security_repo.add([security])
-#         await candle_repo.add(candles)
+        await security_repo.add([security])
+        await candle_span_repo.add(candle_spans)
 
-#         candle_repo = candle_repo.filter_by_security(security)
-#         count = await candle_repo.count()
-#         assert count == 1000
+        candle_span_repo = candle_span_repo.filter_by_security(security)
+        count = await candle_span_repo.count()
+        assert count == 100
 
-#         retrieved_candles = []
-#         i, batch_size = 0, 100
-#         while True:
-#             batch_repo = candle_repo[i, i + batch_size]
-#             items = [r.entity async for r in batch_repo]
-#             retrieved_candles += items
-#             if not items:
-#                 break
-#             i += batch_size
+        retrieved_candle_spans = []
+        i, batch_size = 0, 10
+        while True:
+            batch_repo = candle_span_repo[i, i + batch_size]
+            items = [r.entity async for r in batch_repo]
+            retrieved_candle_spans += items
+            if not items:
+                break
+            i += batch_size
 
-#         assert set(candles) == set(retrieved_candles)
+        assert set(candle_spans) == set(retrieved_candle_spans)
 
-#         records = [r async for r in candle_repo]
-#         await candle_repo.remove(records)
+        records = [r async for r in candle_span_repo]
+        await candle_span_repo.remove(records)
 
-#         count = await candle_repo.count()
-#         assert count == 0
+        count = await candle_span_repo.count()
+        assert count == 0
 
-#         security_repo = security_repo.filter_by_ticker(test_ticker)
-#         security_records = [r async for r in security_repo]
-#         await security_repo.remove(security_records)
-#         count = await security_repo.count()
-#         assert count == 0
+        security_repo = security_repo.filter_by_ticker(test_ticker)
+        security_records = [r async for r in security_repo]
+        await security_repo.remove(security_records)
+        count = await security_repo.count()
+        assert count == 0
