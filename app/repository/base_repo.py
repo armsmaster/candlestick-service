@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, override
 
 from sqlalchemy import Connection
 from sqlalchemy import Table, or_, and_, select, func
@@ -69,21 +69,24 @@ class BaseRepository(IRepository):
         where = and_(1 == 1, *self._filters)
         return where
 
+    @override
     async def count(self) -> int:
         statement = self._construct_count()
         result = await self._connection.execute(statement)
         out = result.scalar_one()
         return out
 
+    @override
     def __aiter__(self) -> "IRepository":
         self.index = 0
         return self
 
+    @override
     async def __anext__(self) -> Record:
         if self._rows is None:
             statement = self._construct_select()
             self._rows = await self._connection.execute(statement)
-            self._rows = list(self._rows)
+            self._rows: list[Row] = list(self._rows)
 
         if self.index < len(self._rows):
             row: Row = self._rows[self.index]
@@ -93,15 +96,6 @@ class BaseRepository(IRepository):
         raise StopAsyncIteration
 
     def _row_to_record(self, row: Row) -> Record:
-        pass
-
-    def __getitem__(self, s: tuple) -> "IRepository":
-        pass
-
-    async def add(self, items: list[Entity]) -> None:
-        pass
-
-    async def remove(self, items: list[Record]) -> None:
         pass
 
     async def _select_raw(
