@@ -6,9 +6,9 @@ from app.core.entities import Entity
 
 
 @dataclass(frozen=True)
-class Record:
+class Record[T]:
     id: UUID
-    entity: Entity
+    entity: T
 
 
 class IRepository(ABC):
@@ -22,7 +22,7 @@ class IRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def __anext__(self) -> Record:
+    async def __anext__(self) -> Record[Entity]:
         raise NotImplementedError
 
     @abstractmethod
