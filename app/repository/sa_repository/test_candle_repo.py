@@ -13,40 +13,36 @@ class TestCandleRepoAlchemy:
 
     @pytest.mark.asyncio
     async def test_create(self):
-        cf = connection_factory()
-        conn = await anext(aiter(cf))
-        await TestCases.execute_create_candle(
-            UOW(conn),
-            security_repository_factory(conn),
-            candle_repository_factory(conn),
-        )
+        async with connection_factory() as conn:
+            await TestCases.execute_create_candle(
+                UOW(conn),
+                security_repository_factory(conn),
+                candle_repository_factory(conn),
+            )
 
     @pytest.mark.asyncio
     async def test_create_many(self):
-        cf = connection_factory()
-        conn = await anext(aiter(cf))
-        await TestCases.execute_create_many_candles(
-            UOW(conn),
-            security_repository_factory(conn),
-            candle_repository_factory(conn),
-        )
+        async with connection_factory() as conn:
+            await TestCases.execute_create_many_candles(
+                UOW(conn),
+                security_repository_factory(conn),
+                candle_repository_factory(conn),
+            )
 
     @pytest.mark.asyncio
     async def test_slicing(self):
-        cf = connection_factory()
-        conn = await anext(aiter(cf))
-        await TestCases.execute_slicing(
-            UOW(conn),
-            security_repository_factory(conn),
-            candle_repository_factory(conn),
-        )
+        async with connection_factory() as conn:
+            await TestCases.execute_slicing(
+                UOW(conn),
+                security_repository_factory(conn),
+                candle_repository_factory(conn),
+            )
 
     @pytest.mark.asyncio
     async def test_filters(self):
-        cf = connection_factory()
-        conn = await anext(aiter(cf))
-        await TestCases.execute_candle_filters(
-            UOW(conn),
-            security_repository_factory(conn),
-            candle_repository_factory(conn),
-        )
+        async with connection_factory() as conn:
+            await TestCases.execute_candle_filters(
+                UOW(conn),
+                security_repository_factory(conn),
+                candle_repository_factory(conn),
+            )

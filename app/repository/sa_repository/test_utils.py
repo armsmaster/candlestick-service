@@ -1,5 +1,5 @@
 from os import environ
-import asyncio
+from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncConnection
 
@@ -23,24 +23,19 @@ class UOW(IUnitOfWork):
         pass
 
     async def __aexit__(self, exc_type, exc_val, traceback) -> bool:
-        pass
-        # Why do I get "Task was destroyed but it is pending!"
-        # if I finish the transaction properly???
-
-        # if exc_type is None:
-        #     await self.commit()
-        # else:
-        #     await self.rollback()
+        if exc_type is None:
+            await self.commit()
+        else:
+            await self.rollback()
 
     async def commit(self):
-        print("UOW.commit")
         await self.connection.commit()
 
     async def rollback(self):
-        print("UOW.rollback")
         await self.connection.rollback()
 
 
+@asynccontextmanager
 async def connection_factory():
     url = "{drivername}://{username}:{password}@{host}:{port}/{database}".format(
         drivername=environ.get("DB_DRIVER"),
@@ -50,13 +45,12 @@ async def connection_factory():
         port=environ.get("PG_PORT"),
         database=environ.get("POSTGRES_DB"),
     )
-    while True:
-        try:
-            engine: AsyncEngine = create_async_engine(url, echo=False)
-            async with engine.connect() as connection:
-                yield connection
-        finally:
-            await engine.dispose()
+    engine: AsyncEngine = create_async_engine(url, echo=False)
+    try:
+        async with engine.connect() as connection:
+            yield connection
+    finally:
+        await engine.dispose()
 
 
 def security_repository_factory(
