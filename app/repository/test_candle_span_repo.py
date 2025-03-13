@@ -11,8 +11,8 @@ from app.core.entities import Security, CandleSpan, Timeframe, Entity
 from app.core.repository.base import IRepository, Record
 from app.core.repository.security_repository import ISecurityRepository
 from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.repository.security_repo import SecurityRepository
-from app.repository.candle_span_repo import CandleSpanRepository
+from app.repository.sa_repository.security_repo import SecurityRepository
+from app.repository.sa_repository.candle_span_repo import CandleSpanRepository
 
 
 class UOW:

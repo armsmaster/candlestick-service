@@ -11,8 +11,8 @@ from app.core.entities import Security, Candle, Timeframe, Entity
 from app.core.repository.base import IRepository, Record
 from app.core.repository.security_repository import ISecurityRepository
 from app.core.repository.candle_repository import ICandleRepository
-from app.repository.security_repo import SecurityRepository
-from app.repository.candle_repo import CandleRepository
+from app.repository.sa_repository.security_repo import SecurityRepository
+from app.repository.sa_repository.candle_repo import CandleRepository
 
 
 class UOW:

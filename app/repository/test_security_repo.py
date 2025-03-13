@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncConnec
 
 from app.core.entities import Security
 from app.core.repository.security_repository import ISecurityRepository
-from app.repository.security_repo import SecurityRepository
+
+from app.repository.sa_repository.security_repo import SecurityRepository
 
 
 class UOW:
