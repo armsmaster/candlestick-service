@@ -21,8 +21,9 @@ async def test_market_data_adapter_mono():
         time_from=Timestamp("2024-12-17"),
         time_till=Timestamp("2025-02-17"),
     )
-    adapter = MarketDataAdapter(request=request)
-    candles = await adapter.load()
+    adapter = MarketDataAdapter()
+    await adapter.load(request=request)
+    candles = adapter.candles
     assert isinstance(candles, list)
     assert len(candles) == 674
     assert isinstance(candles[0], Candle)
@@ -53,12 +54,12 @@ async def test_market_data_adapter_concurrent():
             time_till=Timestamp("2025-02-17"),
         ),
     ]
-    adapters = [MarketDataAdapter(request=request) for request in requests]
-    candles_lists = await asyncio.gather(*[adapter.load() for adapter in adapters])
-    assert isinstance(candles_lists, list)
-    assert len(candles_lists) == len(requests)
-    assert isinstance(candles_lists[0], list)
-    assert isinstance(candles_lists[0][0], Candle)
-    assert isinstance(candles_lists[1][0], Candle)
-    assert len(candles_lists[0]) == 674
-    assert len(candles_lists[1]) == 674
+    adapters = [MarketDataAdapter() for _ in requests]
+    await asyncio.gather(
+        *[adapter.load(request) for adapter, request in zip(adapters, requests)]
+    )
+    assert isinstance(adapters[0].candles[0], Candle)
+    assert isinstance(adapters[1].candles[0], Candle)
+    assert isinstance(adapters[2].candles[0], Candle)
+    assert len(adapters[0].candles) == 674
+    assert len(adapters[1].candles) == 674

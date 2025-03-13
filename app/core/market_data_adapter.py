@@ -21,9 +21,14 @@ class MarketDataRequest:
 class IMarketDataAdapter(ABC):
 
     @abstractmethod
-    def __init__(self, request: MarketDataRequest):
+    def __init__(self):
         pass
 
     @abstractmethod
-    async def load(self) -> list[Candle]:
+    async def load(self, request: MarketDataRequest) -> None:
+        pass
+
+    @property
+    @abstractmethod
+    def candles(self) -> list[Candle]:
         pass
