@@ -2,9 +2,30 @@ import dataclasses
 
 
 @dataclasses.dataclass(frozen=True)
-class Range:
-    left: int
-    right: int
+class Range[T]:
+    left: T
+    right: T
+
+
+def rangemerge(ranges: list[Range]) -> list[Range]:
+    ranges.sort(key=lambda x: x.left)
+    prev = None
+    updated_ranges: list[Range] = []
+    for rng in ranges:
+        if prev is None:
+            updated_ranges += [rng]
+            prev = rng
+            continue
+        if rng.left <= prev.right + 1:
+            updated_ranges[-1] = Range(
+                left=updated_ranges[-1].left,
+                right=max(updated_ranges[-1].right, rng.right),
+            )
+            prev = updated_ranges[-1]
+            continue
+        updated_ranges += [rng]
+        prev = rng
+    return updated_ranges
 
 
 def rangediff(remove_what: list[Range], remove_from: Range) -> list[Range]:

@@ -1,5 +1,5 @@
 from app.core.date_time import Timestamp
-from app.market_data_loader.rangediff import Range, rangediff
+from app.market_data_loader.range_operations import Range, rangediff
 
 
 def test_rangediff():
