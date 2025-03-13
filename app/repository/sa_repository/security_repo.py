@@ -11,8 +11,8 @@ from app.core.entities import Security
 from app.core.repository.security_repository import ISecurityRepository
 from app.core.repository.base import Record
 
-from app.repository.base_repo import BaseRepository, Filter, FilterGroup
-from app.repository.metadata import security_table
+from app.repository.sa_repository.base_repo import BaseRepository, Filter, FilterGroup
+from app.repository.sa_repository.metadata import security_table
 
 
 class SecurityRepository(BaseRepository, ISecurityRepository):
