@@ -6,10 +6,11 @@ from app.core.market_data_adapter import IMarketDataAdapter
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Candle, CandleSpan, Timeframe
 from app.core.unit_of_work import IUnitOfWork
+from app.core.repository.base import Record
 from app.core.repository.security_repository import ISecurityRepository
 from app.core.repository.candle_repository import ICandleRepository
 from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.market_data_loader.rangediff import Range, rangediff
+from app.market_data_loader.range_operations import Range, rangediff, rangemerge
 
 
 class MarketDataLoader(IMarketDataLoader):
@@ -71,25 +72,15 @@ class MarketDataLoader(IMarketDataLoader):
         timeframe: Timeframe,
         batches: list[MarketDataLoaderRequest],
     ):
-        repo = self.candle_span_repository.filter_by_security(
-            security
-        ).filter_by_timeframe(timeframe)
+        repo = self.candle_span_repository
+        repo = repo.filter_by_security(security).filter_by_timeframe(timeframe)
         span_records = [span_record async for span_record in repo]
+
         ranges = [
-            Range(record.entity.date_from, record.entity.date_till)
-            for record in span_records
-        ] + [Range(b.time_from, b.time_till) for b in batches]
-        ranges.sort(key=lambda x: x.left)
-        prev = None
-        updated_ranges = []
-        for rng in ranges:
-            if prev is None:
-                updated_ranges += [rng]
-                prev = rng
-                continue
-            if rng.left == prev.right or rng.left == prev.right + 1:
-                updated_ranges[-1].right = rng.right
-                continue
+            *[Range(sr.entity.date_from, sr.entity.date_till) for sr in span_records],
+            *[Range(b.time_from, b.time_till) for b in batches],
+        ]
+        merged_ranges = rangemerge(ranges)
         updated_spans = [
             CandleSpan(
                 security=security,
@@ -97,7 +88,7 @@ class MarketDataLoader(IMarketDataLoader):
                 date_from=rng.left,
                 date_till=rng.right,
             )
-            for rng in updated_ranges
+            for rng in merged_ranges
         ]
         self.candle_span_repository.remove(span_records)
         self.candle_repository.add(updated_spans)
