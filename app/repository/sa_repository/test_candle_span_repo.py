@@ -13,40 +13,36 @@ class TestCandleSpanRepoAlchemy:
 
     @pytest.mark.asyncio
     async def test_create(self):
-        cf = connection_factory()
-        conn = await anext(aiter(cf))
-        await TestCases.execute_create_candle_span(
-            UOW(conn),
-            security_repository_factory(conn),
-            candle_span_repository_factory(conn),
-        )
+        async with connection_factory() as conn:
+            await TestCases.execute_create_candle_span(
+                UOW(conn),
+                security_repository_factory(conn),
+                candle_span_repository_factory(conn),
+            )
 
     @pytest.mark.asyncio
     async def test_create_many(self):
-        cf = connection_factory()
-        conn = await anext(aiter(cf))
-        await TestCases.execute_create_many_candle_spans(
-            UOW(conn),
-            security_repository_factory(conn),
-            candle_span_repository_factory(conn),
-        )
+        async with connection_factory() as conn:
+            await TestCases.execute_create_many_candle_spans(
+                UOW(conn),
+                security_repository_factory(conn),
+                candle_span_repository_factory(conn),
+            )
 
     @pytest.mark.asyncio
     async def test_slicing(self):
-        cf = connection_factory()
-        conn = await anext(cf)
-        await TestCases.execute_slicing(
-            UOW(conn),
-            security_repository_factory(conn),
-            candle_span_repository_factory(conn),
-        )
+        async with connection_factory() as conn:
+            await TestCases.execute_slicing(
+                UOW(conn),
+                security_repository_factory(conn),
+                candle_span_repository_factory(conn),
+            )
 
     @pytest.mark.asyncio
     async def test_filters(self):
-        cf = connection_factory()
-        conn = await anext(aiter(cf))
-        await TestCases.execute_candle_span_filters(
-            UOW(conn),
-            security_repository_factory(conn),
-            candle_span_repository_factory(conn),
-        )
+        async with connection_factory() as conn:
+            await TestCases.execute_candle_span_filters(
+                UOW(conn),
+                security_repository_factory(conn),
+                candle_span_repository_factory(conn),
+            )
