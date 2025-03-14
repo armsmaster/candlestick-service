@@ -1,7 +1,7 @@
 import asyncio
 
 from app.core.market_data_loader import IMarketDataLoader, MarketDataLoaderRequest
-from app.core.market_data_adapter import IMarketDataAdapter
+from app.core.market_data_adapter import IMarketDataAdapter, MarketDataRequest
 
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Candle, CandleSpan, Timeframe
@@ -30,7 +30,7 @@ class MarketDataLoader(IMarketDataLoader):
         self.unit_of_work = unit_of_work
 
     async def load_candles(self, request: MarketDataLoaderRequest) -> None:
-        request_batches = self._construct_batches(request)
+        request_batches = await self._construct_batches(request)
         await asyncio.gather(*[self._load_batch(rb) for rb in request_batches])
         candles = self.market_data_adapter.candles
         async with self.unit_of_work:
@@ -90,8 +90,15 @@ class MarketDataLoader(IMarketDataLoader):
             )
             for rng in merged_ranges
         ]
-        self.candle_span_repository.remove(span_records)
-        self.candle_repository.add(updated_spans)
+        await self.candle_span_repository.remove(span_records)
+        await self.candle_span_repository.add(updated_spans)
 
     async def _load_batch(self, request: MarketDataLoaderRequest) -> None:
-        await self.market_data_adapter.load(request)
+        md_request = MarketDataRequest(
+            board=request.security.board,
+            ticker=request.security.ticker,
+            timeframe=request.timeframe,
+            time_from=request.time_from,
+            time_till=request.time_till,
+        )
+        await self.market_data_adapter.load(md_request)

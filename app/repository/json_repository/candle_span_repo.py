@@ -27,7 +27,8 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
         super().__init__()
         self._load_rows("candle_span.json")
         self._order_by = ["date_from"] if repo is None else list(repo._order_by)
-        self._rows = list() if repo is None else list(repo._rows)
+        if repo is not None:
+            self._rows = list(repo._rows)
 
     @override
     def _row_to_record(self, row: dict) -> Record[CandleSpan]:
