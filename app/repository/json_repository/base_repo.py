@@ -1,13 +1,7 @@
-from dataclasses import dataclass
-from typing import Any, override
+from os import path
+import json
+from typing import override
 
-from sqlalchemy import Connection
-from sqlalchemy import Table, or_, and_, select, func
-
-from sqlalchemy import ColumnExpressionArgument, ColumnElement, Select
-from sqlalchemy import Row
-
-from app.core.entities import Entity
 from app.core.repository.base import IRepository
 from app.core.repository.base import Record
 
@@ -41,5 +35,25 @@ class BaseRepository(IRepository):
             return record
         raise StopAsyncIteration
 
-    def _row_to_record(self, row: Row) -> Record:
+    def _row_to_record(self, row: dict) -> Record:
         pass
+
+    def _sort(self) -> None:
+        for field in reversed(self._order_by):
+            self._rows.sort(key=lambda x: x[field])
+
+    def _dump_rows(self, filename: str) -> None:
+        dir = path.dirname(__file__)
+        json.dump(
+            self._rows,
+            open(path.join(dir, filename), "w"),
+            indent=2,
+            sort_keys=True,
+        )
+
+    def _load_rows(self, filename: str) -> None:
+        dir = path.dirname(__file__)
+        try:
+            self._rows = json.load(open(path.join(dir, filename), "r"))
+        except Exception as e:
+            self._rows = list()
