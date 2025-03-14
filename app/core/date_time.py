@@ -91,3 +91,10 @@ class Timestamp:
 
     def __sub__(self, value: int):
         return Timestamp(self.data - timedelta(days=value))
+
+    def date(self):
+        if isinstance(self.data, datetime):
+            return self.data.date()
+
+        if isinstance(self.data, date):
+            return self.data

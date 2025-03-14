@@ -4,3 +4,4 @@ __pycache__
 *.py[cdo]
 *.pytest_cache
 db-data
+app/repository/json_repository/*.json
