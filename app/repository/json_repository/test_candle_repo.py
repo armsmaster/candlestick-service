@@ -8,7 +8,7 @@ from app.repository.json_repository.test_utils import (
 from app.repository.test_candle_repo import TestCases
 
 
-class TestCandleRepoAlchemy:
+class TestCandleRepoJson:
 
     @pytest.mark.asyncio
     async def test_create(self):
