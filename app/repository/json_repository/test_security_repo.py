@@ -8,7 +8,7 @@ from app.repository.json_repository.test_utils import (
 from app.repository.test_security_repo import TestCases
 
 
-class TestSecurityRepoAlchemy:
+class TestSecurityRepoJson:
 
     @pytest.mark.asyncio
     async def test_create_security(self):
