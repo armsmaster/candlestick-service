@@ -1,7 +1,7 @@
 """Base classes for Use Case component."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -24,7 +24,7 @@ class UseCaseResponse:
     """Base UseCase Response."""
 
     result: Any | None = None
-    errors: list[str] = list()
+    errors: list[str] = field(default_factory=list)
 
 
 class BaseUseCase(ABC):

@@ -1,7 +1,7 @@
 """Update Candles use case implementation."""
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import product
 
 from app.core.date_time import Timestamp
@@ -36,7 +36,7 @@ class UpdateCandlesResponse(UseCaseResponse):
     """UpdateCandles Response."""
 
     result: None = None
-    errors: list[str] = list()
+    errors: list[str] = field(default_factory=list)
 
 
 class UpdateCandles(BaseUseCase):
@@ -77,12 +77,13 @@ class UpdateCandles(BaseUseCase):
 
         response = UpdateCandlesResponse()
         event = UpdateCandlesEvent(securities=securities)
-        self.log_event(event=event)
+        await self.log_event(event=event)
         return response
 
     async def _consume(self, queue: asyncio.Queue):
         while True:
             request = await queue.get()
+            request = request[0]
             await self.load_candles_use_case.execute(request)
             queue.task_done()
 

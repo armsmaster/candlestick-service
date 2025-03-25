@@ -1,6 +1,6 @@
 """Load Candles use case implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Timeframe
@@ -39,7 +39,7 @@ class LoadCandlesResponse(UseCaseResponse):
     """LoadCandles Response."""
 
     result: None = None
-    errors: list[str] = list()
+    errors: list[str] = field(default_factory=list)
 
 
 class LoadCandles(BaseUseCase):
@@ -72,5 +72,5 @@ class LoadCandles(BaseUseCase):
             time_from=request.time_from,
             time_till=request.time_till,
         )
-        self.log_event(event=event)
+        await self.log_event(event=event)
         return response
