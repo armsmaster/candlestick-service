@@ -9,3 +9,4 @@ python-dotenv
 psycopg
 asyncpg
 pytz
+pre-commit
