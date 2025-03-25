@@ -1,42 +1,21 @@
-from os import environ
+"""Dependencies for test suite."""
+
 from contextlib import asynccontextmanager
+from os import environ
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncConnection
-
-from app.core.unit_of_work import IUnitOfWork
-from app.core.repository.security_repository import ISecurityRepository
-from app.repository.sa_repository.security_repo import SecurityRepository
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 from app.core.repository.candle_repository import ICandleRepository
-from app.repository.sa_repository.candle_repo import CandleRepository
-
 from app.core.repository.candle_span_repository import ICandleSpanRepository
+from app.core.repository.security_repository import ISecurityRepository
+from app.repository.sa_repository.candle_repo import CandleRepository
 from app.repository.sa_repository.candle_span_repo import CandleSpanRepository
-
-
-class UOW(IUnitOfWork):
-
-    def __init__(self, connection: AsyncConnection):
-        self.connection = connection
-
-    async def __aenter__(self):
-        pass
-
-    async def __aexit__(self, exc_type, exc_val, traceback) -> bool:
-        if exc_type is None:
-            await self.commit()
-        else:
-            await self.rollback()
-
-    async def commit(self):
-        await self.connection.commit()
-
-    async def rollback(self):
-        await self.connection.rollback()
+from app.repository.sa_repository.security_repo import SecurityRepository
 
 
 @asynccontextmanager
 async def connection_factory():
+    """Yield connection in context."""
     url = "{drivername}://{username}:{password}@{host}:{port}/{database}".format(
         drivername=environ.get("DB_DRIVER"),
         username=environ.get("POSTGRES_USER"),
@@ -56,16 +35,19 @@ async def connection_factory():
 def security_repository_factory(
     connection: AsyncConnection,
 ) -> ISecurityRepository:
+    """Return security repository."""
     return SecurityRepository(connection)
 
 
 def candle_repository_factory(
     connection: AsyncConnection,
 ) -> ICandleRepository:
+    """Return candle repository."""
     return CandleRepository(connection)
 
 
 def candle_span_repository_factory(
     connection: AsyncConnection,
 ) -> ICandleSpanRepository:
+    """Return candle repository."""
     return CandleSpanRepository(connection)
