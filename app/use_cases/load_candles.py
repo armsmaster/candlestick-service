@@ -1,4 +1,4 @@
-"""Create Security use case implementation."""
+"""Load Candles use case implementation."""
 
 from dataclasses import dataclass
 
