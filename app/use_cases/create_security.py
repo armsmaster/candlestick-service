@@ -1,6 +1,6 @@
 """Create Security use case implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.core.entities import Security
 from app.core.repository.security_repository import ISecurityRepository
@@ -34,7 +34,7 @@ class CreateSecurityResponse(UseCaseResponse):
     """CreateSecurity Response."""
 
     result: Security | None = None
-    errors: list[str] = list()
+    errors: list[str] = field(default_factory=list)
 
 
 class CreateSecurity(BaseUseCase):
@@ -56,5 +56,5 @@ class CreateSecurity(BaseUseCase):
             await self.security_repo.add([security])
         response = CreateSecurityResponse(result=security)
         event = CreateSecurityEvent(ticker=security.ticker, board=security.board)
-        self.log_event(event=event)
+        await self.log_event(event=event)
         return response
