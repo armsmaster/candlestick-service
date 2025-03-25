@@ -1,32 +1,28 @@
-import pytest
+"""Tests for Market Data Loader."""
 
 from uuid import uuid4
 
-from app.core.unit_of_work import IUnitOfWork
+import pytest
 
 from app.core.date_time import Timestamp
-from app.core.entities import Security, Timeframe, CandleSpan
-from app.core.repository.base import IRepository
-
-from app.core.market_data_adapter import IMarketDataAdapter
+from app.core.entities import CandleSpan, Security, Timeframe
 from app.core.market_data_loader import IMarketDataLoader, MarketDataLoaderRequest
-
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository.base import IRepository
 from app.core.repository.candle_repository import ICandleRepository
 from app.core.repository.candle_span_repository import ICandleSpanRepository
-
+from app.core.repository.security_repository import ISecurityRepository
 from app.market_data_loader.market_data_loader import MarketDataLoader
-
 from app.market_data_loader.test_utils import (
-    FakeMarketDataAdapter,
     UOW,
-    security_repository_factory,
+    FakeMarketDataAdapter,
     candle_repository_factory,
     candle_span_repository_factory,
+    security_repository_factory,
 )
 
 
 class TestCases:
+    """Test Cases for IMarketDataLoader (interface)."""
 
     @staticmethod
     async def _clean_up(
@@ -35,7 +31,7 @@ class TestCases:
         candle_repo: ICandleRepository,
         candle_span_repo: ICandleSpanRepository,
     ) -> None:
-
+        """Delete test data."""
         security_record = [r async for r in security_repo.filter_by_ticker(ticker)][0]
         await security_repo.remove([security_record])
 
@@ -70,6 +66,7 @@ class TestCases:
 
     @staticmethod
     async def _check_count(repo: IRepository, expected_count: int):
+        """Compare record count actual vs. expected."""
         count = await repo.count()
         assert count == expected_count
 
@@ -80,6 +77,7 @@ class TestCases:
         candle_repo: ICandleRepository,
         candle_span_repo: ICandleSpanRepository,
     ):
+        """Test basic use case."""
         test_ticker = uuid4().hex
         test_board = uuid4().hex
         security = Security(ticker=test_ticker, board=test_board)
@@ -114,6 +112,11 @@ class TestCases:
         candle_repo: ICandleRepository,
         candle_span_repo: ICandleSpanRepository,
     ):
+        """
+        Load candles for two overlapping periods.
+
+        Should issue requests only for non-overlapping part.
+        """
         test_ticker = uuid4().hex
         test_board = uuid4().hex
         test_tf = Timeframe.H1
@@ -135,6 +138,13 @@ class TestCases:
             time_from=Timestamp("2025-01-15"),
             time_till=Timestamp("2025-02-28"),
         )
+
+        mdl: MarketDataLoader = market_data_loader
+        batches = await mdl._construct_batches(request)
+        assert len(batches) == 1
+        assert batches[0].time_from == Timestamp("2025-02-01")
+        assert batches[0].time_till == Timestamp("2025-02-28")
+
         await market_data_loader.load_candles(request)
 
         await TestCases._check_count(
@@ -167,6 +177,7 @@ class TestCases:
         candle_repo: ICandleRepository,
         candle_span_repo: ICandleSpanRepository,
     ):
+        """Load candles for two non-overlapping periods."""
         test_ticker = uuid4().hex
         test_board = uuid4().hex
         test_tf = Timeframe.H1
@@ -221,9 +232,11 @@ class TestCases:
 
 
 class Test:
+    """Tests for MarketDataLoader (implementation)."""
 
     @pytest.mark.asyncio
     async def test_load(self):
+        """Test basic use case."""
         security_repository = security_repository_factory()
         candle_repository = candle_repository_factory()
         candle_span_repository = candle_span_repository_factory()
@@ -244,6 +257,7 @@ class Test:
 
     @pytest.mark.asyncio
     async def test_load_two_overlapping_periods(self):
+        """Load candles for two overlapping periods."""
         security_repository = security_repository_factory()
         candle_repository = candle_repository_factory()
         candle_span_repository = candle_span_repository_factory()
@@ -264,6 +278,7 @@ class Test:
 
     @pytest.mark.asyncio
     async def test_load_two_non_overlapping_periods(self):
+        """Load candles for two non-overlapping periods."""
         security_repository = security_repository_factory()
         candle_repository = candle_repository_factory()
         candle_span_repository = candle_span_repository_factory()
