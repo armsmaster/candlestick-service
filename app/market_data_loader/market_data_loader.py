@@ -9,7 +9,10 @@ from app.core.repository.candle_repository import ICandleRepository
 from app.core.repository.candle_span_repository import ICandleSpanRepository
 from app.core.repository.security_repository import ISecurityRepository
 from app.core.unit_of_work import IUnitOfWork
+from app.dependency import get_logger
 from app.market_data_loader.range_operations import Range, rangediff, rangemerge
+
+logger = get_logger()
 
 
 class MarketDataLoader(IMarketDataLoader):
@@ -33,6 +36,7 @@ class MarketDataLoader(IMarketDataLoader):
     async def load_candles(self, request: MarketDataLoaderRequest) -> None:
         """Load candles."""
         request_batches = await self._construct_batches(request)
+        logger.debug("MarketDataLoader.load_candles", n_batches=len(request_batches))
         if not request_batches:
             return
         await asyncio.gather(*[self._load_batch(rb) for rb in request_batches])
@@ -105,6 +109,7 @@ class MarketDataLoader(IMarketDataLoader):
 
     async def _load_batch(self, request: MarketDataLoaderRequest) -> None:
         """Load market data."""
+        logger.debug("MarketDataLoader._load_batch", request=str(request))
         md_request = MarketDataRequest(
             board=request.security.board,
             ticker=request.security.ticker,
@@ -113,3 +118,4 @@ class MarketDataLoader(IMarketDataLoader):
             time_till=request.time_till,
         )
         await self.market_data_adapter.load(md_request)
+        logger.debug("MarketDataLoader._load_batch finished")

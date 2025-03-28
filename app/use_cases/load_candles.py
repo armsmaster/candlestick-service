@@ -5,12 +5,15 @@ from dataclasses import dataclass, field
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Timeframe
 from app.core.market_data_loader import IMarketDataLoader, MarketDataLoaderRequest
+from app.dependency import get_logger
 from app.use_cases.base import (
     BaseUseCase,
     UseCaseEvent,
     UseCaseRequest,
     UseCaseResponse,
 )
+
+logger = get_logger()
 
 
 @dataclass
@@ -54,6 +57,14 @@ class LoadCandles(BaseUseCase):
 
     async def execute(self, request: LoadCandlesRequest) -> LoadCandlesResponse:
         """Execute."""
+        logger.debug(
+            "LoadCandles.execute",
+            ticker=request.security_ticker,
+            board=request.security_board,
+            timeframe=request.timeframe,
+            time_from=request.time_from,
+            time_till=request.time_till,
+        )
         security = Security(
             ticker=request.security_ticker,
             board=request.security_board,

@@ -11,3 +11,4 @@ asyncpg
 pytz
 pre-commit
 typer
+structlog
