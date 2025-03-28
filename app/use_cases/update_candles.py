@@ -1,12 +1,15 @@
 """Update Candles use case implementation."""
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from itertools import product
+from typing import AsyncContextManager
 
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Timeframe
 from app.core.repository.security_repository import ISecurityRepository
+from app.dependency import get_logger
 from app.use_cases.base import (
     BaseUseCase,
     UseCaseEvent,
@@ -14,6 +17,8 @@ from app.use_cases.base import (
     UseCaseResponse,
 )
 from app.use_cases.load_candles import LoadCandles, LoadCandlesRequest
+
+logger = get_logger()
 
 
 @dataclass
@@ -27,7 +32,7 @@ class UpdateCandlesEvent(UseCaseEvent):
 class UpdateCandlesRequest(UseCaseRequest):
     """UpdateCandles Request."""
 
-    time_from: Timestamp = Timestamp("2022-10-01")
+    time_from: Timestamp = Timestamp("2024-08-01")
     time_till: Timestamp = Timestamp.today() - 1
 
 
@@ -44,18 +49,19 @@ class UpdateCandles(BaseUseCase):
 
     def __init__(
         self,
-        load_candles_use_case: LoadCandles,
-        security_repo: ISecurityRepository,
+        load_candles_provider: Callable[[], AsyncContextManager[LoadCandles]],
+        security_repo_provider: Callable[[], AsyncContextManager[ISecurityRepository]],
         n_tasks: int = 5,
     ):
         """Initialize."""
-        self.load_candles_use_case = load_candles_use_case
-        self.security_repo = security_repo
+        self.load_candles_provider = load_candles_provider
+        self.security_repo_provider = security_repo_provider
         self.n_tasks = n_tasks
 
     async def execute(self, request: UpdateCandlesRequest) -> UpdateCandlesResponse:
         """Execute."""
-        securities = [rec.entity async for rec in self.security_repo]
+        async with self.security_repo_provider() as security_repo:
+            securities = [rec.entity async for rec in security_repo]
         ml_requests = [
             LoadCandlesRequest(
                 security_ticker=s.ticker,
@@ -84,9 +90,12 @@ class UpdateCandles(BaseUseCase):
         while True:
             request = await queue.get()
             request = request[0]
-            await self.load_candles_use_case.execute(request)
+            logger.debug("UpdateCandles._consume", request=str(request))
+            async with self.load_candles_provider() as load_candles_use_case:
+                await load_candles_use_case.execute(request)
             queue.task_done()
 
     async def _produce(self, queue: asyncio.Queue, requests: list[LoadCandlesRequest]):
         for request in requests:
             await queue.put((request,))
+        logger.debug("UpdateCandles._produce", tasks_created=len(requests))
