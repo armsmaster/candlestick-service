@@ -1,8 +1,21 @@
 """Logger implementation."""
 
+import logging
+from os import environ
+
 import structlog
+from dotenv import load_dotenv
 
 from app.core.logger import ILogger
+
+load_dotenv()
+
+
+log_level = environ.get("LOG_LEVEL", "INFO")
+
+structlog.configure(
+    wrapper_class=structlog.make_filtering_bound_logger(logging._nameToLevel[log_level])
+)
 
 
 class StructLogger(ILogger):
