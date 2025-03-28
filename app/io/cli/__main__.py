@@ -4,8 +4,10 @@ import asyncio
 
 import typer
 
+from app.dependency import get_logger
 from app.io.cli.commands import create_security_command, update_candles_command
 
+logger = get_logger()
 app = typer.Typer()
 
 
