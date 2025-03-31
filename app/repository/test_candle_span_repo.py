@@ -2,11 +2,11 @@ from datetime import timedelta
 from uuid import uuid4
 
 from app.core.date_time import Timestamp
-from app.core.entities import Security, CandleSpan, Timeframe, Entity
-from app.core.unit_of_work import IUnitOfWork
-from app.core.repository.base import IRepository, Record
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.entities import CandleSpan, Entity, Security, Timeframe
+from app.core.repository.base import IRepository
 from app.core.repository.candle_span_repository import ICandleSpanRepository
+from app.core.repository.security_repository import ISecurityRepository
+from app.core.unit_of_work import IUnitOfWork
 
 
 class TestCases:
@@ -95,7 +95,7 @@ class TestCases:
             assert count == 3
 
             records = [r async for r in candle_span_repo]
-            assert set([r.entity for r in records]) == set(candle_spans)
+            assert set([r for r in records]) == set(candle_spans)
 
             await candle_span_repo.remove(records)
             candle_span_repo = candle_span_repo.filter_by_security(security)
@@ -147,7 +147,7 @@ class TestCases:
             i, batch_size = 0, 10
             while True:
                 batch_repo = candle_span_repo[i, i + batch_size]
-                items = [r.entity async for r in batch_repo]
+                items = [r async for r in batch_repo]
                 retrieved_candle_spans += items
                 if not items:
                     break
@@ -180,10 +180,10 @@ class TestCases:
             assert count == expected_count
 
         async def _compare_records_and_source_entities(
-            records: list[Record],
+            records: list[Entity],
             entities: list[Entity],
         ):
-            set_entities_from_records = set([r.entity for r in records])
+            set_entities_from_records = set([r for r in records])
             set_entities = set(entities)
             assert set_entities_from_records == set_entities
 

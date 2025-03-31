@@ -1,18 +1,15 @@
 from datetime import timedelta
 
 from app.core.date_time import Timestamp
-from app.core.unit_of_work import IUnitOfWork
+from app.core.entities import Candle, Timeframe
 from app.core.market_data_adapter import IMarketDataAdapter, MarketDataRequest
-from app.core.entities import Candle, Timeframe, Security
-
-from app.core.repository.security_repository import ISecurityRepository
-from app.repository.json_repository.security_repo import SecurityRepository
-
 from app.core.repository.candle_repository import ICandleRepository
-from app.repository.json_repository.candle_repo import CandleRepository
-
 from app.core.repository.candle_span_repository import ICandleSpanRepository
+from app.core.repository.security_repository import ISecurityRepository
+from app.core.unit_of_work import IUnitOfWork
+from app.repository.json_repository.candle_repo import CandleRepository
 from app.repository.json_repository.candle_span_repo import CandleSpanRepository
+from app.repository.json_repository.security_repo import SecurityRepository
 
 
 class FakeMarketDataAdapter(IMarketDataAdapter):
@@ -25,7 +22,7 @@ class FakeMarketDataAdapter(IMarketDataAdapter):
 
     async def load(self, request: MarketDataRequest):
         self.request = request
-        self._candles = self._generate_candles()
+        return self._generate_candles()
 
     @property
     def candles(self) -> list[Candle]:
@@ -37,7 +34,7 @@ class FakeMarketDataAdapter(IMarketDataAdapter):
         while Timestamp(t.date()) < self.request.time_till + 1:
 
             candle = Candle(
-                security=Security(ticker=self.request.ticker, board=self.request.board),
+                security=self.request.security,
                 timeframe=self.request.timeframe,
                 timestamp=t,
                 open=100,
@@ -57,7 +54,7 @@ class FakeMarketDataAdapter(IMarketDataAdapter):
 
             tmax = Timestamp(f"{str(t.date())} 18:00:00+03:00")
             if t > tmax:
-                t = Timestamp(f"{str((t+1).date())} 10:00:00+03:00")
+                t = Timestamp(f"{str((t + 1).date())} 10:00:00+03:00")
 
         return out
 

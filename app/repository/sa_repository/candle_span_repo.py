@@ -1,20 +1,13 @@
 from typing import override
 
-from uuid import UUID, uuid4
-
-from sqlalchemy import Connection
-from sqlalchemy import select, or_
+from sqlalchemy import Connection, Row, or_, select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import Row
 
 from app.core.date_time import Timestamp
-from app.core.entities import Security, Timeframe, CandleSpan
+from app.core.entities import CandleSpan, Security, Timeframe
 from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.core.repository.base import Record
-
 from app.repository.sa_repository.base_repo import BaseRepository
-from app.repository.sa_repository.security_repo import SecurityRepository
-from app.repository.sa_repository.metadata import security_table, candle_span_table
+from app.repository.sa_repository.metadata import candle_span_table, security_table
 
 
 class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
@@ -27,7 +20,6 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
         connection: Connection | None = None,
         repo: ICandleSpanRepository | None = None,
     ):
-        self._securities: dict[Security, UUID] = {}
         super().__init__(
             connection=connection if repo is None else repo._connection,
             table=self.table,
@@ -43,20 +35,19 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
         )
 
     @override
-    def _row_to_record(self, row: Row) -> Record:
-        record = Record(
+    def _row_to_entity(self, row: Row) -> CandleSpan:
+        entity = CandleSpan(
             id=row.id,
-            entity=CandleSpan(
-                security=Security(
-                    ticker=row.ticker,
-                    board=row.board,
-                ),
-                timeframe=Timeframe(row.timeframe),
-                date_from=Timestamp(row.date_from),
-                date_till=Timestamp(row.date_till),
+            security=Security(
+                id=row.security_id,
+                ticker=row.ticker,
+                board=row.board,
             ),
+            timeframe=Timeframe(row.timeframe),
+            date_from=Timestamp(row.date_from),
+            date_till=Timestamp(row.date_till),
         )
-        return record
+        return entity
 
     @override
     async def add(self, items: list[CandleSpan]) -> None:
@@ -66,8 +57,8 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
         insert_stmt = insert(self.table).on_conflict_do_nothing()
         items_to_insert = [
             {
-                "id": uuid4(),
-                "security_id": await self._get_security_id(item.security),
+                "id": item.id,
+                "security_id": item.security.id,
                 "timeframe": item.timeframe.value,
                 "date_from": item.date_from.dt,
                 "date_till": item.date_till.dt,
@@ -76,20 +67,8 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
         ]
         await self._connection.execute(insert_stmt, items_to_insert)
 
-    async def _get_security_id(self, security: Security) -> UUID:
-        if security in self._securities:
-            return self._securities[security]
-        security_repo = (
-            SecurityRepository(self._connection)
-            .filter_by_board(security.board)
-            .filter_by_ticker(security.ticker)
-        )
-        async for record in security_repo:
-            self._securities[security] = record.id
-            return record.id
-
     @override
-    async def remove(self, items: list[Record]):
+    async def remove(self, items: list[CandleSpan]):
         statement = self.table.delete().where(
             or_(False, *[self.table.c["id"] == i.id for i in items])
         )

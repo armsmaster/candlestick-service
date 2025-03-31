@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+from uuid import UUID, uuid4
 
 from app.core.date_time import Timestamp
 
@@ -13,18 +14,23 @@ class Timeframe(Enum):
 
 @dataclass(frozen=True)
 class Entity:
-    pass
+    id: UUID = field(default_factory=uuid4)
 
 
 @dataclass(frozen=True)
-class Security(Entity):
+class SecurityData:
 
     ticker: str
     board: str
 
 
 @dataclass(frozen=True)
-class Candle(Entity):
+class Security(Entity, SecurityData):
+    pass
+
+
+@dataclass(frozen=True)
+class CandleData:
 
     security: Security
     timeframe: Timeframe
@@ -36,9 +42,19 @@ class Candle(Entity):
 
 
 @dataclass(frozen=True)
-class CandleSpan(Entity):
+class Candle(Entity, CandleData):
+    pass
+
+
+@dataclass(frozen=True)
+class CandleSpanData:
 
     security: Security
     timeframe: Timeframe
     date_from: Timestamp
     date_till: Timestamp
+
+
+@dataclass(frozen=True)
+class CandleSpan(Entity, CandleSpanData):
+    pass

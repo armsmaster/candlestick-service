@@ -1,17 +1,16 @@
 import asyncio
-import aiohttp
 from urllib.parse import urlencode
-from pytz import timezone
 
+import aiohttp
 
+import app.market_data_adapter.constants as constants
 from app.core.date_time import Timestamp
-from app.core.entities import Candle, Security
+from app.core.entities import CandleData
 from app.core.market_data_adapter import (
     IMarketDataAdapter,
-    MarketDataRequest,
     MarketDataAdapterException,
+    MarketDataRequest,
 )
-import app.market_data_adapter.constants as constants
 
 
 class MarketDataAdapter(IMarketDataAdapter):
@@ -25,30 +24,21 @@ class MarketDataAdapter(IMarketDataAdapter):
         pass
 
     def _init(self, request: MarketDataRequest) -> None:
-        self.ticker = request.ticker
-        self.board = request.board
+        self.security = request.security
         self.time_from = request.time_from
         self.time_till = request.time_till
         self.timeframe = request.timeframe
-        self._candles: list[Candle] = []
+        self._candles: list[CandleData] = []
         self._init_market()
         self._init_interval()
-        self._init_security()
-
-    @property
-    def candles(self) -> list[Candle]:
-        return self._candles
-
-    @candles.setter
-    def candles(self, values: list[Candle]) -> None:
-        self._candles = values
-        self._candles.sort(key=lambda x: x.timestamp)
 
     def _init_market(self):
         try:
-            self.market = self.MARKETS[self.board]
+            self.market = self.MARKETS[self.security.board]
         except KeyError:
-            raise MarketDataAdapterException(f"Board '{self.board}' not supported.")
+            raise MarketDataAdapterException(
+                f"Board '{self.security.board}' not supported."
+            )
 
     def _init_interval(self):
         try:
@@ -58,12 +48,9 @@ class MarketDataAdapter(IMarketDataAdapter):
                 f"Timeframe '{self.timeframe}' not supported."
             )
 
-    def _init_security(self):
-        self.security = Security(ticker=self.ticker, board=self.board)
-
     async def load(self, request: MarketDataRequest):
         self._init(request)
-        self.candles_set = set()
+        self.candles_set: set[CandleData] = set()
         queue = asyncio.Queue()
         n_consumers = constants.N_CONSUMERS
         consumers = [
@@ -75,7 +62,8 @@ class MarketDataAdapter(IMarketDataAdapter):
             consumer.cancel()
 
         candles = list(self.candles_set)
-        self.candles += candles
+        candles.sort(key=lambda x: x.timestamp)
+        return candles
 
     async def _produce(self, queue: asyncio.Queue):
         i = 0
@@ -86,7 +74,7 @@ class MarketDataAdapter(IMarketDataAdapter):
             if not rows:
                 break
             await queue.put((columns, rows))
-            i += 100
+            i += len(rows)
 
     async def _consume(self, queue: asyncio.Queue):
         while True:
@@ -106,8 +94,8 @@ class MarketDataAdapter(IMarketDataAdapter):
             a=self.API,
             e=f"engines/{self.ENGINE}",
             m=f"markets/{self.market}",
-            b=f"boards/{self.board}",
-            t=f"securities/{self.ticker}",
+            b=f"boards/{self.security.board}",
+            t=f"securities/{self.security.ticker}",
         )
         params = {
             "from": self.time_from,
@@ -119,13 +107,13 @@ class MarketDataAdapter(IMarketDataAdapter):
         url += "?" + urlencode(params)
         return url
 
-    def _process_rows(self, columns: list[str], data: list[list]) -> list[Candle]:
+    def _process_rows(self, columns: list[str], data: list[list]) -> list[CandleData]:
         mapping = {c: idx for idx, c in enumerate(columns)}
         return [self._process_row(mapping, item) for item in data]
 
-    def _process_row(self, mapping: dict[str, int], data: list) -> Candle:
+    def _process_row(self, mapping: dict[str, int], data: list) -> CandleData:
         timestamp_str: str = data[mapping["begin"]]
-        return Candle(
+        return CandleData(
             security=self.security,
             timeframe=self.timeframe,
             timestamp=Timestamp(timestamp=timestamp_str, tz="Europe/Moscow"),

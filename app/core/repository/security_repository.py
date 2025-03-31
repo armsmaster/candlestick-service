@@ -1,17 +1,17 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from app.core.entities import Security
-from app.core.repository.base import IRepository, Record
+from app.core.repository.base import IRepository
 
 
-class ISecurityRepository(IRepository, ABC):
+class ISecurityRepository(IRepository):
 
     @abstractmethod
     def __aiter__(self) -> "ISecurityRepository":
         raise NotImplementedError
 
     @abstractmethod
-    async def __anext__(self) -> Record[Security]:
+    async def __anext__(self) -> Security:
         raise NotImplementedError
 
     @abstractmethod

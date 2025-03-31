@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 
 from app.core.date_time import Timestamp
-from app.core.entities import Timeframe
-from app.core.entities import Security, Candle
-
-from app.core.repository.base import IRepository, Record
+from app.core.entities import Candle, Security, Timeframe
+from app.core.repository.base import IRepository
 
 
 class ICandleRepository(IRepository, ABC):
@@ -14,7 +12,7 @@ class ICandleRepository(IRepository, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def __anext__(self) -> Record[Candle]:
+    async def __anext__(self) -> Candle:
         raise NotImplementedError
 
     @abstractmethod

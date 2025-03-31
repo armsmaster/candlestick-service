@@ -1,13 +1,9 @@
 from typing import override
-
-from uuid import uuid4, UUID
+from uuid import UUID
 
 from app.core.date_time import Timestamp
-from app.core.entities import Security, Candle, Timeframe
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.entities import Candle, Security, Timeframe
 from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.base import Record
-
 from app.repository.json_repository.base_repo import BaseRepository
 from app.repository.json_repository.security_repo import SecurityRepository
 
@@ -27,37 +23,35 @@ class CandleRepository(BaseRepository, ICandleRepository):
             self._rows = list(repo._rows)
 
     @override
-    def _row_to_record(self, row: dict) -> Record[Candle]:
-        record = Record(
-            id=row["id"],
-            entity=Candle(
-                security=Security(
-                    ticker=row["security__ticker"],
-                    board=row["security__board"],
-                ),
-                timeframe=Timeframe(row["timeframe"]),
-                timestamp=Timestamp(row["timestamp"]),
-                open=row["open"],
-                high=row["high"],
-                low=row["low"],
-                close=row["close"],
+    def _row_to_entity(self, row: dict) -> Candle:
+        record = Candle(
+            id=UUID(row["id"]),
+            security=Security(
+                id=UUID(row["security_id"]),
+                ticker=row["security__ticker"],
+                board=row["security__board"],
             ),
+            timeframe=Timeframe(row["timeframe"]),
+            timestamp=Timestamp(row["timestamp"]),
+            open=row["open"],
+            high=row["high"],
+            low=row["low"],
+            close=row["close"],
         )
         return record
 
-    async def _record_to_row(self, record: Candle) -> dict:
-        item = record
+    async def _entity_to_row(self, entity: Candle) -> dict:
         return {
-            "id": str(uuid4()),
-            "security_id": str(await self._get_security_id(item.security)),
-            "security__ticker": item.security.ticker,
-            "security__board": item.security.board,
-            "timeframe": item.timeframe.value,
-            "timestamp": str(item.timestamp),
-            "open": item.open,
-            "high": item.high,
-            "low": item.low,
-            "close": item.close,
+            "id": str(entity.id),
+            "security_id": str(entity.security.id),
+            "security__ticker": entity.security.ticker,
+            "security__board": entity.security.board,
+            "timeframe": entity.timeframe.value,
+            "timestamp": str(entity.timestamp),
+            "open": entity.open,
+            "high": entity.high,
+            "low": entity.low,
+            "close": entity.close,
         }
 
     @override
@@ -69,7 +63,7 @@ class CandleRepository(BaseRepository, ICandleRepository):
         idx = lambda rows: [unique_tuple(r) for r in rows]
         not_dublicate = lambda r, rows: unique_tuple(r) not in idx(rows)
 
-        items_to_insert = [await self._record_to_row(item) for item in items]
+        items_to_insert = [await self._entity_to_row(item) for item in items]
         items_to_insert = [i for i in items_to_insert if not_dublicate(i, self._rows)]
         self._rows += items_to_insert
         self._sort()
@@ -91,7 +85,7 @@ class CandleRepository(BaseRepository, ICandleRepository):
             return record.id
 
     @override
-    async def remove(self, items: list[Record[Candle]]):
+    async def remove(self, items: list[Candle]):
         items_ids = [str(i.id) for i in items]
         self._rows = [r for r in self._rows if r["id"] not in items_ids]
         repo = CandleRepository()

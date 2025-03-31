@@ -61,16 +61,15 @@ class UpdateCandles(BaseUseCase):
     async def execute(self, request: UpdateCandlesRequest) -> UpdateCandlesResponse:
         """Execute."""
         async with self.security_repo_provider() as security_repo:
-            securities = [rec.entity async for rec in security_repo]
+            securities = [security async for security in security_repo]
         ml_requests = [
             LoadCandlesRequest(
-                security_ticker=s.ticker,
-                security_board=s.board,
+                security=security,
                 timeframe=tf,
                 time_from=request.time_from,
                 time_till=request.time_till,
             )
-            for s, tf in product(securities, Timeframe)
+            for security, tf in product(securities, Timeframe)
         ]
         queue = asyncio.Queue()
         consumers = [

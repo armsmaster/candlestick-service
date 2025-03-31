@@ -1,17 +1,9 @@
 from typing import override
-
-from uuid import UUID, uuid4
-
-from sqlalchemy import Connection
-from sqlalchemy import select, or_
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import Row
+from uuid import UUID
 
 from app.core.date_time import Timestamp
-from app.core.entities import Security, Timeframe, CandleSpan
+from app.core.entities import CandleSpan, Security, Timeframe
 from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.core.repository.base import Record
-
 from app.repository.json_repository.base_repo import BaseRepository
 from app.repository.json_repository.security_repo import SecurityRepository
 
@@ -31,31 +23,29 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
             self._rows = list(repo._rows)
 
     @override
-    def _row_to_record(self, row: dict) -> Record[CandleSpan]:
-        record = Record(
-            id=row["id"],
-            entity=CandleSpan(
-                security=Security(
-                    ticker=row["security__ticker"],
-                    board=row["security__board"],
-                ),
-                timeframe=Timeframe(row["timeframe"]),
-                date_from=Timestamp(row["date_from"]),
-                date_till=Timestamp(row["date_till"]),
+    def _row_to_entity(self, row: dict) -> CandleSpan:
+        record = CandleSpan(
+            id=UUID(row["id"]),
+            security=Security(
+                id=UUID(row["security_id"]),
+                ticker=row["security__ticker"],
+                board=row["security__board"],
             ),
+            timeframe=Timeframe(row["timeframe"]),
+            date_from=Timestamp(row["date_from"]),
+            date_till=Timestamp(row["date_till"]),
         )
         return record
 
-    async def _record_to_row(self, record: CandleSpan) -> dict:
-        item = record
+    async def _entity_to_row(self, entity: CandleSpan) -> dict:
         return {
-            "id": str(uuid4()),
-            "security_id": str(await self._get_security_id(item.security)),
-            "security__ticker": item.security.ticker,
-            "security__board": item.security.board,
-            "timeframe": item.timeframe.value,
-            "date_from": str(item.date_from.dt),
-            "date_till": str(item.date_till.dt),
+            "id": str(entity.id),
+            "security_id": str(entity.security.id),
+            "security__ticker": entity.security.ticker,
+            "security__board": entity.security.board,
+            "timeframe": entity.timeframe.value,
+            "date_from": str(entity.date_from.dt),
+            "date_till": str(entity.date_till.dt),
         }
 
     @override
@@ -67,7 +57,7 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
         idx = lambda rows: [unique_tuple(r) for r in rows]
         not_dublicate = lambda r, rows: unique_tuple(r) not in idx(rows)
 
-        items_to_insert = [await self._record_to_row(item) for item in items]
+        items_to_insert = [await self._entity_to_row(item) for item in items]
         items_to_insert = [i for i in items_to_insert if not_dublicate(i, self._rows)]
         self._rows += items_to_insert
         self._sort()
@@ -89,7 +79,7 @@ class CandleSpanRepository(BaseRepository, ICandleSpanRepository):
             return record.id
 
     @override
-    async def remove(self, items: list[Record]):
+    async def remove(self, items: list[CandleSpan]):
         items_ids = [str(i.id) for i in items]
         self._rows = [r for r in self._rows if r["id"] not in items_ids]
         repo = CandleSpanRepository()
