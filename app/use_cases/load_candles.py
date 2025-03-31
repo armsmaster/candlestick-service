@@ -30,8 +30,7 @@ class LoadCandlesEvent(UseCaseEvent):
 class LoadCandlesRequest(UseCaseRequest):
     """LoadCandles Request."""
 
-    security_ticker: str
-    security_board: str
+    security: Security
     timeframe: Timeframe
     time_from: Timestamp
     time_till: Timestamp
@@ -59,16 +58,12 @@ class LoadCandles(BaseUseCase):
         """Execute."""
         logger.debug(
             "LoadCandles.execute",
-            ticker=request.security_ticker,
-            board=request.security_board,
+            security=request.security,
             timeframe=request.timeframe,
             time_from=request.time_from,
             time_till=request.time_till,
         )
-        security = Security(
-            ticker=request.security_ticker,
-            board=request.security_board,
-        )
+        security = request.security
         mdl_request = MarketDataLoaderRequest(
             security=security,
             timeframe=request.timeframe,
