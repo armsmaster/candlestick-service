@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from app.core.date_time import Timestamp
-from app.core.entities import Timeframe, Candle
+from app.core.entities import CandleData, Security, Timeframe
 
 
 class MarketDataAdapterException(Exception):
@@ -11,8 +11,7 @@ class MarketDataAdapterException(Exception):
 
 @dataclass
 class MarketDataRequest:
-    board: str
-    ticker: str
+    security: Security
     timeframe: Timeframe
     time_from: Timestamp
     time_till: Timestamp
@@ -25,10 +24,5 @@ class IMarketDataAdapter(ABC):
         pass
 
     @abstractmethod
-    async def load(self, request: MarketDataRequest) -> None:
-        pass
-
-    @property
-    @abstractmethod
-    def candles(self) -> list[Candle]:
+    async def load(self, request: MarketDataRequest) -> list[CandleData]:
         pass
