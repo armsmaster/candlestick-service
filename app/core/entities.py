@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from app.core.date_time import Timestamp
 
 
-class Timeframe(Enum):
+class Timeframe(str, Enum):
 
     M1 = "M1"
     M10 = "M10"

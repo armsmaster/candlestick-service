@@ -1,4 +1,16 @@
 services:
+
+  candles-rest-api:
+    build: .
+    image: candles-rest-api
+    command: "gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.io.rest_api.main:app -b 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    environment:
+      - PG_HOST=db
+      - PG_PORT=5432
   db:
     image: postgres:16
     env_file:

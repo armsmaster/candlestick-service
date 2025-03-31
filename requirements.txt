@@ -12,3 +12,7 @@ pytz
 pre-commit
 typer
 structlog
+fastapi
+pydantic
+gunicorn
+uvicorn
