@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from app.core.date_time import Timestamp
-from app.core.entities import CandleSpan, Security, Timeframe
+from app.core.entities import Security, Timeframe
 from app.core.market_data_loader import IMarketDataLoader, MarketDataLoaderRequest
 from app.core.repository.base import IRepository
 from app.core.repository.candle_repository import ICandleRepository
@@ -37,16 +37,14 @@ class TestCases:
 
         candle_records = [
             rec
-            async for rec in candle_repo.filter_by_security(
-                security=security_record.entity
-            )
+            async for rec in candle_repo.filter_by_security(security=security_record)
         ]
         await candle_repo.remove(candle_records)
 
         candle_span_records = [
             rec
             async for rec in candle_span_repo.filter_by_security(
-                security=security_record.entity
+                security=security_record
             )
         ]
         await candle_span_repo.remove(items=candle_span_records)
@@ -56,11 +54,11 @@ class TestCases:
             expected_count=0,
         )
         await TestCases._check_count(
-            repo=candle_repo.filter_by_security(security=security_record.entity),
+            repo=candle_repo.filter_by_security(security=security_record),
             expected_count=0,
         )
         await TestCases._check_count(
-            repo=candle_span_repo.filter_by_security(security=security_record.entity),
+            repo=candle_span_repo.filter_by_security(security=security_record),
             expected_count=0,
         )
 
@@ -154,14 +152,15 @@ class TestCases:
         candle_span_records = [
             rec async for rec in candle_span_repo.filter_by_security(security=security)
         ]
-        assert [r.entity for r in candle_span_records] == [
-            CandleSpan(
-                security=security,
-                timeframe=test_tf,
-                date_from=Timestamp("2025-01-01"),
-                date_till=Timestamp("2025-02-28"),
-            )
-        ]
+        for cs, tfrom, ttill in zip(
+            candle_span_records,
+            [Timestamp("2025-01-01")],
+            [Timestamp("2025-02-28")],
+        ):
+            assert cs.security == security
+            assert cs.timeframe == test_tf
+            assert cs.date_from == tfrom
+            assert cs.date_till == ttill
 
         await TestCases._clean_up(
             ticker=test_ticker,
@@ -208,20 +207,15 @@ class TestCases:
         candle_span_records = [
             rec async for rec in candle_span_repo.filter_by_security(security=security)
         ]
-        assert [r.entity for r in candle_span_records] == [
-            CandleSpan(
-                security=security,
-                timeframe=test_tf,
-                date_from=Timestamp("2025-01-01"),
-                date_till=Timestamp("2025-01-31"),
-            ),
-            CandleSpan(
-                security=security,
-                timeframe=test_tf,
-                date_from=Timestamp("2025-02-02"),
-                date_till=Timestamp("2025-02-28"),
-            ),
-        ]
+        for cs, tfrom, ttill in zip(
+            candle_span_records,
+            [Timestamp("2025-01-01"), Timestamp("2025-02-02")],
+            [Timestamp("2025-01-31"), Timestamp("2025-02-28")],
+        ):
+            assert cs.security == security
+            assert cs.timeframe == test_tf
+            assert cs.date_from == tfrom
+            assert cs.date_till == ttill
 
         await TestCases._clean_up(
             ticker=test_ticker,

@@ -2,7 +2,7 @@
 
 import asyncio
 
-from app.core.entities import CandleSpan, Security, Timeframe
+from app.core.entities import Candle, CandleData, CandleSpan, Security, Timeframe
 from app.core.market_data_adapter import IMarketDataAdapter, MarketDataRequest
 from app.core.market_data_loader import IMarketDataLoader, MarketDataLoaderRequest
 from app.core.repository.candle_repository import ICandleRepository
@@ -32,6 +32,7 @@ class MarketDataLoader(IMarketDataLoader):
         self.candle_repository = candle_repository
         self.candle_span_repository = candle_span_repository
         self.unit_of_work = unit_of_work
+        self._candles: list[CandleData] = []
 
     async def load_candles(self, request: MarketDataLoaderRequest) -> None:
         """Load candles."""
@@ -40,7 +41,7 @@ class MarketDataLoader(IMarketDataLoader):
         if not request_batches:
             return
         await asyncio.gather(*[self._load_batch(rb) for rb in request_batches])
-        candles = self.market_data_adapter.candles
+        candles = [Candle(**cd.__dict__) for cd in self._candles]
         async with self.unit_of_work:
             await self.candle_repository.add(candles)
             await self._update_candle_spans(
@@ -57,9 +58,7 @@ class MarketDataLoader(IMarketDataLoader):
         repo = self.candle_span_repository.filter_by_security(
             request.security
         ).filter_by_timeframe(request.timeframe)
-        candle_spans: list[CandleSpan] = [
-            span_record.entity async for span_record in repo
-        ]
+        candle_spans: list[CandleSpan] = [span_record async for span_record in repo]
         range_batches = rangediff(
             remove_from=Range(request.time_from, request.time_till),
             remove_what=[Range(cs.date_from, cs.date_till) for cs in candle_spans],
@@ -91,7 +90,7 @@ class MarketDataLoader(IMarketDataLoader):
         span_records = [span_record async for span_record in repo]
 
         ranges = [
-            *[Range(sr.entity.date_from, sr.entity.date_till) for sr in span_records],
+            *[Range(sr.date_from, sr.date_till) for sr in span_records],
             *[Range(b.time_from, b.time_till) for b in batches],
         ]
         merged_ranges = rangemerge(ranges)
@@ -111,11 +110,11 @@ class MarketDataLoader(IMarketDataLoader):
         """Load market data."""
         logger.debug("MarketDataLoader._load_batch", request=str(request))
         md_request = MarketDataRequest(
-            board=request.security.board,
-            ticker=request.security.ticker,
+            security=request.security,
             timeframe=request.timeframe,
             time_from=request.time_from,
             time_till=request.time_till,
         )
-        await self.market_data_adapter.load(md_request)
+        candles = await self.market_data_adapter.load(md_request)
+        self._candles += candles
         logger.debug("MarketDataLoader._load_batch finished")
