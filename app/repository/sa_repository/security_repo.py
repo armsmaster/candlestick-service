@@ -1,17 +1,11 @@
 from typing import override
 
-from uuid import UUID, uuid4
-
-from sqlalchemy import Connection
-from sqlalchemy import select, delete, and_, or_, Table
+from sqlalchemy import Connection, Row, or_
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import Row
 
 from app.core.entities import Security
 from app.core.repository.security_repository import ISecurityRepository
-from app.core.repository.base import Record
-
-from app.repository.sa_repository.base_repo import BaseRepository, Filter, FilterGroup
+from app.repository.sa_repository.base_repo import BaseRepository
 from app.repository.sa_repository.metadata import security_table
 
 
@@ -33,15 +27,13 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         )
 
     @override
-    def _row_to_record(self, row: Row) -> Record:
-        record = Record(
+    def _row_to_entity(self, row: Row) -> Security:
+        entity = Security(
             id=row.id,
-            entity=Security(
-                ticker=row.ticker,
-                board=row.board,
-            ),
+            ticker=row.ticker,
+            board=row.board,
         )
-        return record
+        return entity
 
     @override
     async def add(self, items: list[Security]) -> None:
@@ -50,7 +42,7 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         insert_stmt = insert(self.table).on_conflict_do_nothing()
         items_to_insert = [
             {
-                "id": uuid4(),
+                "id": item.id,
                 "ticker": item.ticker,
                 "board": item.board,
             }
@@ -59,7 +51,7 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         await self._connection.execute(insert_stmt, items_to_insert)
 
     @override
-    async def remove(self, items: list[Record]):
+    async def remove(self, items: list[Security]):
         statement = self.table.delete().where(
             or_(False, *[self.table.c["id"] == i.id for i in items])
         )

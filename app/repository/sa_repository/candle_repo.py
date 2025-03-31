@@ -1,19 +1,12 @@
 from typing import override
 
-from uuid import UUID, uuid4
-
-from sqlalchemy import Connection
-from sqlalchemy import select, delete, and_, or_, Table
+from sqlalchemy import Connection, Row, or_, select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import Row
 
 from app.core.date_time import Timestamp
-from app.core.entities import Security, Candle, Timeframe
+from app.core.entities import Candle, Security, Timeframe
 from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.base import Record
-
-from app.repository.sa_repository.base_repo import BaseRepository, Filter, FilterGroup
-from app.repository.sa_repository.security_repo import SecurityRepository
+from app.repository.sa_repository.base_repo import BaseRepository
 from app.repository.sa_repository.metadata import candle_table, security_table
 
 
@@ -27,7 +20,6 @@ class CandleRepository(BaseRepository, ICandleRepository):
         connection: Connection | None = None,
         repo: ICandleRepository | None = None,
     ):
-        self._securities: dict[Security, UUID] = {}
         super().__init__(
             connection=connection if repo is None else repo._connection,
             table=self.table,
@@ -43,23 +35,22 @@ class CandleRepository(BaseRepository, ICandleRepository):
         )
 
     @override
-    def _row_to_record(self, row: Row) -> Record:
-        record = Record(
+    def _row_to_entity(self, row: Row) -> Candle:
+        entity = Candle(
             id=row.id,
-            entity=Candle(
-                security=Security(
-                    ticker=row.ticker,
-                    board=row.board,
-                ),
-                timeframe=Timeframe(row.timeframe),
-                timestamp=Timestamp(row.timestamp),
-                open=row.open,
-                high=row.high,
-                low=row.low,
-                close=row.close,
+            security=Security(
+                id=row.security_id,
+                ticker=row.ticker,
+                board=row.board,
             ),
+            timeframe=Timeframe(row.timeframe),
+            timestamp=Timestamp(row.timestamp),
+            open=row.open,
+            high=row.high,
+            low=row.low,
+            close=row.close,
         )
-        return record
+        return entity
 
     @override
     async def add(self, items: list[Candle]) -> None:
@@ -69,8 +60,8 @@ class CandleRepository(BaseRepository, ICandleRepository):
         insert_stmt = insert(self.table).on_conflict_do_nothing()
         items_to_insert = [
             {
-                "id": uuid4(),
-                "security_id": await self._get_security_id(item.security),
+                "id": item.id,
+                "security_id": item.security.id,
                 "timeframe": item.timeframe.value,
                 "timestamp": item.timestamp.dt,
                 "open": item.open,
@@ -82,20 +73,8 @@ class CandleRepository(BaseRepository, ICandleRepository):
         ]
         await self._connection.execute(insert_stmt, items_to_insert)
 
-    async def _get_security_id(self, security: Security) -> UUID:
-        if security in self._securities:
-            return self._securities[security]
-        security_repo = (
-            SecurityRepository(self._connection)
-            .filter_by_board(security.board)
-            .filter_by_ticker(security.ticker)
-        )
-        async for record in security_repo:
-            self._securities[security] = record.id
-            return record.id
-
     @override
-    async def remove(self, items: list[Record]):
+    async def remove(self, items: list[Candle]):
         statement = self.table.delete().where(
             or_(False, *[self.table.c["id"] == i.id for i in items])
         )

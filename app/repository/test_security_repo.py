@@ -1,8 +1,8 @@
 from uuid import uuid4
 
 from app.core.entities import Security
-from app.core.unit_of_work import IUnitOfWork
 from app.core.repository.security_repository import ISecurityRepository
+from app.core.unit_of_work import IUnitOfWork
 
 
 class TestCases:
@@ -25,8 +25,8 @@ class TestCases:
             assert count == 1
 
             # clean up
-            records = [r async for r in repo]
-            await repo.remove(records)
+            securities = [sec async for sec in repo]
+            await repo.remove(securities)
 
             # check test record deleted
             count = await repo.count()
@@ -51,8 +51,8 @@ class TestCases:
             count = await repo.count()
             assert count == 1000
 
-            records = [r async for r in repo]
-            await repo.remove(records)
+            securities = [sec async for sec in repo]
+            await repo.remove(securities)
 
             count = await repo.count()
             assert count == 0
@@ -76,7 +76,7 @@ class TestCases:
             i, batch_size = 0, 100
             while True:
                 batch_repo = repo[i, i + batch_size]
-                items = [r.entity async for r in batch_repo]
+                items = [r async for r in batch_repo]
                 retrieved_securities += items
                 if not items:
                     break

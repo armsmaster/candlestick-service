@@ -1,15 +1,20 @@
 from dataclasses import dataclass
 from typing import Any, override
 
-from sqlalchemy import Connection
-from sqlalchemy import Table, or_, and_, select, func
-
-from sqlalchemy import ColumnExpressionArgument, ColumnElement, Select
-from sqlalchemy import Row
+from sqlalchemy import (
+    ColumnElement,
+    ColumnExpressionArgument,
+    Connection,
+    Row,
+    Select,
+    Table,
+    and_,
+    func,
+    select,
+)
 
 from app.core.entities import Entity
 from app.core.repository.base import IRepository
-from app.core.repository.base import Record
 
 
 @dataclass
@@ -82,7 +87,7 @@ class BaseRepository(IRepository):
         return self
 
     @override
-    async def __anext__(self) -> Record:
+    async def __anext__(self) -> Entity:
         if self._rows is None:
             statement = self._construct_select()
             self._rows = await self._connection.execute(statement)
@@ -90,12 +95,12 @@ class BaseRepository(IRepository):
 
         if self.index < len(self._rows):
             row: Row = self._rows[self.index]
-            record = self._row_to_record(row)
+            record = self._row_to_entity(row)
             self.index += 1
             return record
         raise StopAsyncIteration
 
-    def _row_to_record(self, row: Row) -> Record:
+    def _row_to_entity(self, row: Row) -> Entity:
         pass
 
     async def _select_raw(

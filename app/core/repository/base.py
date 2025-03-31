@@ -1,14 +1,6 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from uuid import UUID
 
 from app.core.entities import Entity
-
-
-@dataclass(frozen=True)
-class Record[T]:
-    id: UUID
-    entity: T
 
 
 class IRepository(ABC):
@@ -22,7 +14,7 @@ class IRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def __anext__(self) -> Record[Entity]:
+    async def __anext__(self) -> Entity:
         raise NotImplementedError
 
     @abstractmethod
@@ -34,5 +26,5 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    async def remove(self, items: list[Record]) -> None:
+    async def remove(self, items: list[Entity]) -> None:
         pass

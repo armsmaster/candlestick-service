@@ -2,11 +2,11 @@ from datetime import timedelta
 from uuid import uuid4
 
 from app.core.date_time import Timestamp
-from app.core.entities import Security, Candle, Timeframe, Entity
-from app.core.unit_of_work import IUnitOfWork
-from app.core.repository.base import IRepository, Record
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.entities import Candle, Entity, Security, Timeframe
+from app.core.repository.base import IRepository
 from app.core.repository.candle_repository import ICandleRepository
+from app.core.repository.security_repository import ISecurityRepository
+from app.core.unit_of_work import IUnitOfWork
 
 
 class TestCases:
@@ -86,7 +86,7 @@ class TestCases:
             assert count == 1000
 
             records = [r async for r in candle_repo]
-            assert set([r.entity for r in records]) == set(candles)
+            assert set([r for r in records]) == set(candles)
 
             await candle_repo.remove(records)
             candle_repo = candle_repo.filter_by_security(security)
@@ -139,7 +139,7 @@ class TestCases:
             i, batch_size = 0, 100
             while True:
                 batch_repo = candle_repo[i, i + batch_size]
-                items = [r.entity async for r in batch_repo]
+                items = [r async for r in batch_repo]
                 retrieved_candles += items
                 if not items:
                     break
@@ -171,10 +171,10 @@ class TestCases:
             assert count == expected_count
 
         async def _compare_records_and_source_entities(
-            records: list[Record],
+            records: list[Entity],
             entities: list[Entity],
         ):
-            set_entities_from_records = set([r.entity for r in records])
+            set_entities_from_records = set([r for r in records])
             set_entities = set(entities)
             assert set_entities_from_records == set_entities
 

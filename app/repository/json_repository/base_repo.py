@@ -1,9 +1,8 @@
-from os import path
 import json
+from os import path
 from typing import override
 
-from app.core.repository.base import IRepository
-from app.core.repository.base import Record
+from app.core.repository.base import Entity, IRepository
 
 
 class BaseRepository(IRepository):
@@ -26,16 +25,16 @@ class BaseRepository(IRepository):
         return self
 
     @override
-    async def __anext__(self) -> Record:
+    async def __anext__(self) -> Entity:
 
         if self.index < len(self._rows):
             row: dict = self._rows[self.index]
-            record = self._row_to_record(row)
+            record = self._row_to_entity(row)
             self.index += 1
             return record
         raise StopAsyncIteration
 
-    def _row_to_record(self, row: dict) -> Record:
+    def _row_to_entity(self, row: dict) -> Entity:
         pass
 
     def _sort(self) -> None:
@@ -55,5 +54,5 @@ class BaseRepository(IRepository):
         dir = path.dirname(__file__)
         try:
             self._rows = json.load(open(path.join(dir, filename), "r"))
-        except Exception as e:
+        except Exception:
             self._rows = list()

@@ -1,11 +1,8 @@
 from typing import override
-
-from uuid import uuid4, UUID
+from uuid import UUID
 
 from app.core.entities import Security
 from app.core.repository.security_repository import ISecurityRepository
-from app.core.repository.base import Record
-
 from app.repository.json_repository.base_repo import BaseRepository
 
 
@@ -30,22 +27,19 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         return out
 
     @override
-    def _row_to_record(self, row: dict) -> Record[Security]:
-        record = Record(
+    def _row_to_entity(self, row: dict) -> Security:
+        entity = Security(
             id=UUID(row["id"]),
-            entity=Security(
-                ticker=row["ticker"],
-                board=row["board"],
-            ),
+            ticker=row["ticker"],
+            board=row["board"],
         )
-        return record
+        return entity
 
-    async def _record_to_row(self, record: Security) -> dict:
-        item = record
+    async def _entity_to_row(self, entity: Security) -> dict:
         return {
-            "id": str(uuid4()),
-            "ticker": item.ticker,
-            "board": item.board,
+            "id": str(entity.id),
+            "ticker": entity.ticker,
+            "board": entity.board,
         }
 
     @override
@@ -57,7 +51,7 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         idx = lambda rows: [unique_tuple(r) for r in rows]
         not_dublicate = lambda r, rows: unique_tuple(r) not in idx(rows)
 
-        items_to_insert = [await self._record_to_row(item) for item in items]
+        items_to_insert = [await self._entity_to_row(item) for item in items]
         items_to_insert = [i for i in items_to_insert if not_dublicate(i, self._rows)]
         self._rows += items_to_insert
         self._sort()
@@ -67,7 +61,7 @@ class SecurityRepository(BaseRepository, ISecurityRepository):
         repo._dump_rows("sec.json")
 
     @override
-    async def remove(self, items: list[Record[Security]]):
+    async def remove(self, items: list[Security]):
         items_ids = [str(i.id) for i in items]
         self._rows = [r for r in self._rows if r["id"] not in items_ids]
         repo = SecurityRepository()
