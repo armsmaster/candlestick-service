@@ -16,3 +16,5 @@ fastapi
 pydantic
 gunicorn
 uvicorn
+taskiq
+taskiq-redis

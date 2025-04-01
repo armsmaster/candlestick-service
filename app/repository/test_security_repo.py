@@ -76,7 +76,7 @@ class TestCases:
             i, batch_size = 0, 100
             while True:
                 batch_repo = repo[i, i + batch_size]
-                items = [r async for r in batch_repo]
+                items = [sec async for sec in batch_repo]
                 retrieved_securities += items
                 if not items:
                     break
