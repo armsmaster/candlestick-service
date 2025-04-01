@@ -9,10 +9,8 @@ from app.core.repository.candle_repository import ICandleRepository
 from app.core.repository.candle_span_repository import ICandleSpanRepository
 from app.core.repository.security_repository import ISecurityRepository
 from app.core.unit_of_work import IUnitOfWork
-from app.dependency import get_logger
+from app.logger.logger import ILogger
 from app.market_data_loader.range_operations import Range, rangediff, rangemerge
-
-logger = get_logger()
 
 
 class MarketDataLoader(IMarketDataLoader):
@@ -25,6 +23,7 @@ class MarketDataLoader(IMarketDataLoader):
         candle_repository: ICandleRepository,
         candle_span_repository: ICandleSpanRepository,
         unit_of_work: IUnitOfWork,
+        logger: ILogger,
     ):
         """Initialize."""
         self.market_data_adapter = market_data_adapter
@@ -32,12 +31,15 @@ class MarketDataLoader(IMarketDataLoader):
         self.candle_repository = candle_repository
         self.candle_span_repository = candle_span_repository
         self.unit_of_work = unit_of_work
+        self.logger = logger
         self._candles: list[CandleData] = []
 
     async def load_candles(self, request: MarketDataLoaderRequest) -> None:
         """Load candles."""
         request_batches = await self._construct_batches(request)
-        logger.debug("MarketDataLoader.load_candles", n_batches=len(request_batches))
+        self.logger.debug(
+            "MarketDataLoader.load_candles", n_batches=len(request_batches)
+        )
         if not request_batches:
             return
         await asyncio.gather(*[self._load_batch(rb) for rb in request_batches])
@@ -108,7 +110,7 @@ class MarketDataLoader(IMarketDataLoader):
 
     async def _load_batch(self, request: MarketDataLoaderRequest) -> None:
         """Load market data."""
-        logger.debug("MarketDataLoader._load_batch", request=str(request))
+        self.logger.debug("MarketDataLoader._load_batch", request=str(request))
         md_request = MarketDataRequest(
             security=request.security,
             timeframe=request.timeframe,
@@ -117,4 +119,4 @@ class MarketDataLoader(IMarketDataLoader):
         )
         candles = await self.market_data_adapter.load(md_request)
         self._candles += candles
-        logger.debug("MarketDataLoader._load_batch finished")
+        self.logger.debug("MarketDataLoader._load_batch finished")

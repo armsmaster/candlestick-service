@@ -11,14 +11,10 @@ from app.core.repository.base import IRepository
 from app.core.repository.candle_repository import ICandleRepository
 from app.core.repository.candle_span_repository import ICandleSpanRepository
 from app.core.repository.security_repository import ISecurityRepository
+from app.dependency.test import Container, FakeMarketDataAdapter
 from app.market_data_loader.market_data_loader import MarketDataLoader
-from app.market_data_loader.test_utils import (
-    UOW,
-    FakeMarketDataAdapter,
-    candle_repository_factory,
-    candle_span_repository_factory,
-    security_repository_factory,
-)
+
+dependencies = Container()
 
 
 class TestCases:
@@ -231,62 +227,75 @@ class Test:
     @pytest.mark.asyncio
     async def test_load(self):
         """Test basic use case."""
-        security_repository = security_repository_factory()
-        candle_repository = candle_repository_factory()
-        candle_span_repository = candle_span_repository_factory()
-
-        market_data_loader = MarketDataLoader(
-            market_data_adapter=FakeMarketDataAdapter(),
-            security_repository=security_repository,
-            candle_repository=candle_repository,
-            candle_span_repository=candle_span_repository,
-            unit_of_work=UOW(),
-        )
-        await TestCases.case_load(
-            market_data_loader=market_data_loader,
-            security_repo=security_repository,
-            candle_repo=candle_repository,
-            candle_span_repo=candle_span_repository,
-        )
+        async with (
+            dependencies.get_security_repository() as security_repository,
+            dependencies.get_candle_repository() as candle_repository,
+            dependencies.get_candle_span_repository() as candle_span_repository,
+            dependencies.get_market_data_adapter() as market_data_adapter,
+            dependencies.get_unit_of_work() as uow,
+        ):
+            market_data_loader = MarketDataLoader(
+                market_data_adapter=market_data_adapter,
+                security_repository=security_repository,
+                candle_repository=candle_repository,
+                candle_span_repository=candle_span_repository,
+                unit_of_work=uow,
+                logger=dependencies.get_logger(),
+            )
+            await TestCases.case_load(
+                market_data_loader=market_data_loader,
+                security_repo=security_repository,
+                candle_repo=candle_repository,
+                candle_span_repo=candle_span_repository,
+            )
 
     @pytest.mark.asyncio
     async def test_load_two_overlapping_periods(self):
         """Load candles for two overlapping periods."""
-        security_repository = security_repository_factory()
-        candle_repository = candle_repository_factory()
-        candle_span_repository = candle_span_repository_factory()
+        async with (
+            dependencies.get_security_repository() as security_repository,
+            dependencies.get_candle_repository() as candle_repository,
+            dependencies.get_candle_span_repository() as candle_span_repository,
+            dependencies.get_market_data_adapter() as market_data_adapter,
+            dependencies.get_unit_of_work() as uow,
+        ):
 
-        market_data_loader = MarketDataLoader(
-            market_data_adapter=FakeMarketDataAdapter(),
-            security_repository=security_repository,
-            candle_repository=candle_repository,
-            candle_span_repository=candle_span_repository,
-            unit_of_work=UOW(),
-        )
-        await TestCases.case_load_two_overlapping_periods(
-            market_data_loader=market_data_loader,
-            security_repo=security_repository,
-            candle_repo=candle_repository,
-            candle_span_repo=candle_span_repository,
-        )
+            market_data_loader = MarketDataLoader(
+                market_data_adapter=market_data_adapter,
+                security_repository=security_repository,
+                candle_repository=candle_repository,
+                candle_span_repository=candle_span_repository,
+                unit_of_work=uow,
+                logger=dependencies.get_logger(),
+            )
+            await TestCases.case_load_two_overlapping_periods(
+                market_data_loader=market_data_loader,
+                security_repo=security_repository,
+                candle_repo=candle_repository,
+                candle_span_repo=candle_span_repository,
+            )
 
     @pytest.mark.asyncio
     async def test_load_two_non_overlapping_periods(self):
         """Load candles for two non-overlapping periods."""
-        security_repository = security_repository_factory()
-        candle_repository = candle_repository_factory()
-        candle_span_repository = candle_span_repository_factory()
-
-        market_data_loader = MarketDataLoader(
-            market_data_adapter=FakeMarketDataAdapter(),
-            security_repository=security_repository,
-            candle_repository=candle_repository,
-            candle_span_repository=candle_span_repository,
-            unit_of_work=UOW(),
-        )
-        await TestCases.case_load_two_non_overlapping_periods(
-            market_data_loader=market_data_loader,
-            security_repo=security_repository,
-            candle_repo=candle_repository,
-            candle_span_repo=candle_span_repository,
-        )
+        async with (
+            dependencies.get_security_repository() as security_repository,
+            dependencies.get_candle_repository() as candle_repository,
+            dependencies.get_candle_span_repository() as candle_span_repository,
+            dependencies.get_market_data_adapter() as market_data_adapter,
+            dependencies.get_unit_of_work() as uow,
+        ):
+            market_data_loader = MarketDataLoader(
+                market_data_adapter=market_data_adapter,
+                security_repository=security_repository,
+                candle_repository=candle_repository,
+                candle_span_repository=candle_span_repository,
+                unit_of_work=uow,
+                logger=dependencies.get_logger(),
+            )
+            await TestCases.case_load_two_non_overlapping_periods(
+                market_data_loader=market_data_loader,
+                security_repo=security_repository,
+                candle_repo=candle_repository,
+                candle_span_repo=candle_span_repository,
+            )

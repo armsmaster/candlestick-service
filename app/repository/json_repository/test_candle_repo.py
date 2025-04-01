@@ -1,43 +1,53 @@
 import pytest
 
-from app.repository.json_repository.test_utils import (
-    UOW,
-    security_repository_factory,
-    candle_repository_factory,
-)
+from app.dependency.test import Container
 from app.repository.test_candle_repo import TestCases
+
+dependencies = Container()
 
 
 class TestCandleRepoJson:
 
     @pytest.mark.asyncio
     async def test_create(self):
-        await TestCases.execute_create_candle(
-            UOW(),
-            security_repository_factory(),
-            candle_repository_factory(),
-        )
+        async with dependencies.get_repos() as elements:
+            uow, security_repo, candle_repo, _ = elements
+
+            await TestCases.execute_create_candle(
+                uow,
+                security_repo,
+                candle_repo,
+            )
 
     @pytest.mark.asyncio
     async def test_create_many(self):
-        await TestCases.execute_create_many_candles(
-            UOW(),
-            security_repository_factory(),
-            candle_repository_factory(),
-        )
+        async with dependencies.get_repos() as elements:
+            uow, security_repo, candle_repo, _ = elements
+
+            await TestCases.execute_create_many_candles(
+                uow,
+                security_repo,
+                candle_repo,
+            )
 
     @pytest.mark.asyncio
     async def test_slicing(self):
-        await TestCases.execute_slicing(
-            UOW(),
-            security_repository_factory(),
-            candle_repository_factory(),
-        )
+        async with dependencies.get_repos() as elements:
+            uow, security_repo, candle_repo, _ = elements
+
+            await TestCases.execute_slicing(
+                uow,
+                security_repo,
+                candle_repo,
+            )
 
     @pytest.mark.asyncio
     async def test_filters(self):
-        await TestCases.execute_candle_filters(
-            UOW(),
-            security_repository_factory(),
-            candle_repository_factory(),
-        )
+        async with dependencies.get_repos() as elements:
+            uow, security_repo, candle_repo, _ = elements
+
+            await TestCases.execute_candle_filters(
+                uow,
+                security_repo,
+                candle_repo,
+            )

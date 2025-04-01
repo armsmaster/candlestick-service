@@ -9,7 +9,7 @@ from typing import AsyncContextManager
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Timeframe
 from app.core.repository.security_repository import ISecurityRepository
-from app.dependency import get_logger
+from app.logger.logger import ILogger
 from app.use_cases.base import (
     BaseUseCase,
     UseCaseEvent,
@@ -17,8 +17,6 @@ from app.use_cases.base import (
     UseCaseResponse,
 )
 from app.use_cases.load_candles import LoadCandles, LoadCandlesRequest
-
-logger = get_logger()
 
 
 @dataclass
@@ -51,12 +49,14 @@ class UpdateCandles(BaseUseCase):
         self,
         load_candles_provider: Callable[[], AsyncContextManager[LoadCandles]],
         security_repo_provider: Callable[[], AsyncContextManager[ISecurityRepository]],
+        logger: ILogger,
         n_tasks: int = 5,
     ):
         """Initialize."""
         self.load_candles_provider = load_candles_provider
         self.security_repo_provider = security_repo_provider
         self.n_tasks = n_tasks
+        self.logger = logger
 
     async def execute(self, request: UpdateCandlesRequest) -> UpdateCandlesResponse:
         """Execute."""
@@ -89,7 +89,7 @@ class UpdateCandles(BaseUseCase):
         while True:
             request = await queue.get()
             request = request[0]
-            logger.debug("UpdateCandles._consume", request=str(request))
+            self.logger.debug("UpdateCandles._consume", request=str(request))
             async with self.load_candles_provider() as load_candles_use_case:
                 await load_candles_use_case.execute(request)
             queue.task_done()
@@ -97,4 +97,4 @@ class UpdateCandles(BaseUseCase):
     async def _produce(self, queue: asyncio.Queue, requests: list[LoadCandlesRequest]):
         for request in requests:
             await queue.put((request,))
-        logger.debug("UpdateCandles._produce", tasks_created=len(requests))
+        self.logger.debug("UpdateCandles._produce", tasks_created=len(requests))
