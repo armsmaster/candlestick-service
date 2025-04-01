@@ -17,12 +17,18 @@ services:
     command: "taskiq scheduler app.tasks:scheduler"
     env_file:
       - ./.env
+    environment:
+      - PG_HOST=db
+      - PG_PORT=5432
 
   candles-task-worker:
     image: candles-app
     command: "taskiq worker app.tasks:broker"
     env_file:
       - ./.env
+    environment:
+      - PG_HOST=db
+      - PG_PORT=5432
 
   redis:
     image: redis:7.2
