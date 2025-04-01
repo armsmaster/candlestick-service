@@ -5,15 +5,13 @@ from dataclasses import dataclass, field
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Timeframe
 from app.core.market_data_loader import IMarketDataLoader, MarketDataLoaderRequest
-from app.dependency import get_logger
+from app.logger.logger import ILogger
 from app.use_cases.base import (
     BaseUseCase,
     UseCaseEvent,
     UseCaseRequest,
     UseCaseResponse,
 )
-
-logger = get_logger()
 
 
 @dataclass
@@ -47,16 +45,14 @@ class LoadCandlesResponse(UseCaseResponse):
 class LoadCandles(BaseUseCase):
     """LoadCandles use case."""
 
-    def __init__(
-        self,
-        market_data_loader: IMarketDataLoader,
-    ):
+    def __init__(self, market_data_loader: IMarketDataLoader, logger: ILogger):
         """Initialize."""
         self.market_data_loader = market_data_loader
+        self.logger = logger
 
     async def execute(self, request: LoadCandlesRequest) -> LoadCandlesResponse:
         """Execute."""
-        logger.debug(
+        self.logger.debug(
             "LoadCandles.execute",
             security=request.security,
             timeframe=request.timeframe,
