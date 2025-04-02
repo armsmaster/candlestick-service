@@ -93,7 +93,6 @@ class UpdateCandles(BaseUseCase):
         while True:
             request = await queue.get()
             request = request[0]
-            self.logger.debug("UpdateCandles._consume", request=str(request))
             async with self.load_candles_provider() as load_candles_use_case:
                 await load_candles_use_case.execute(request)
             queue.task_done()
@@ -101,4 +100,3 @@ class UpdateCandles(BaseUseCase):
     async def _produce(self, queue: asyncio.Queue, requests: list[LoadCandlesRequest]):
         for request in requests:
             await queue.put((request,))
-        self.logger.debug("UpdateCandles._produce", tasks_created=len(requests))
