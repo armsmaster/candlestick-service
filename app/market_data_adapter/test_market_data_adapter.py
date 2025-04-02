@@ -4,10 +4,7 @@ import pytest
 
 from app.core.date_time import Timestamp
 from app.core.entities import CandleData, Security, Timeframe
-from app.market_data_adapter.market_data_adapter import (
-    MarketDataAdapter,
-    MarketDataRequest,
-)
+from app.market_data_adapter import MarketDataAdapter, MarketDataRequest
 
 pytest_plugins = ("pytest_asyncio",)
 

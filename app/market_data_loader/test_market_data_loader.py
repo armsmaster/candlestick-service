@@ -7,12 +7,14 @@ import pytest
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Timeframe
 from app.core.market_data_loader import IMarketDataLoader, MarketDataLoaderRequest
-from app.core.repository.base import IRepository
-from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import (
+    ICandleRepository,
+    ICandleSpanRepository,
+    IRepository,
+    ISecurityRepository,
+)
 from app.dependency.test import Container, FakeMarketDataAdapter
-from app.market_data_loader.market_data_loader import MarketDataLoader
+from app.market_data_loader import MarketDataLoader
 
 dependencies = Container()
 

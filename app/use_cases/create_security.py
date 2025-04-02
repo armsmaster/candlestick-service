@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 
 from app.core.entities import Security
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ISecurityRepository
 from app.core.unit_of_work import IUnitOfWork
 from app.use_cases.base import (
     BaseUseCase,

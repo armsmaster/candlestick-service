@@ -7,9 +7,11 @@ from typing import AsyncGenerator
 from app.core.logger import ILogger
 from app.core.market_data_adapter import IMarketDataAdapter
 from app.core.market_data_loader import IMarketDataLoader
-from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import (
+    ICandleRepository,
+    ICandleSpanRepository,
+    ISecurityRepository,
+)
 from app.core.unit_of_work import IUnitOfWork
 from app.use_cases.create_security import CreateSecurity
 from app.use_cases.load_candles import LoadCandles

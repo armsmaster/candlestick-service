@@ -8,7 +8,7 @@ from typing import AsyncContextManager
 
 from app.core.date_time import Timestamp
 from app.core.entities import Security, Timeframe
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ISecurityRepository
 from app.logger.logger import ILogger
 from app.use_cases.base import (
     BaseUseCase,

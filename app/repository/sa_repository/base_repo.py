@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import OperationalError
 
 from app.core.entities import Entity
-from app.core.repository.base import IRepository
+from app.core.repository import IRepository
 from app.exceptions import DatabaseException
 
 

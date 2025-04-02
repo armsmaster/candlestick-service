@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
 
 from app.core.entities import Candle, Security, Timeframe, Timestamp
-from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ICandleRepository, ISecurityRepository
 from app.use_cases.base import (
     BaseUseCase,
     UseCaseRequest,

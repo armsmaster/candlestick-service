@@ -5,9 +5,11 @@ import asyncio
 from app.core.entities import Candle, CandleData, CandleSpan, Security, Timeframe
 from app.core.market_data_adapter import IMarketDataAdapter, MarketDataRequest
 from app.core.market_data_loader import IMarketDataLoader, MarketDataLoaderRequest
-from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import (
+    ICandleRepository,
+    ICandleSpanRepository,
+    ISecurityRepository,
+)
 from app.core.unit_of_work import IUnitOfWork
 from app.logger.logger import ILogger
 from app.market_data_loader.range_operations import Range, rangediff, rangemerge

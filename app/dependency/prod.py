@@ -9,18 +9,22 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_en
 from app.core.logger import ILogger
 from app.core.market_data_adapter import IMarketDataAdapter
 from app.core.market_data_loader import IMarketDataLoader
-from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import (
+    ICandleRepository,
+    ICandleSpanRepository,
+    ISecurityRepository,
+)
 from app.core.unit_of_work import IUnitOfWork
 from app.dependency.container import IContainer
 from app.logger.logger import StructLogger
-from app.market_data_adapter.market_data_adapter import MarketDataAdapter
-from app.market_data_loader.market_data_loader import MarketDataLoader
-from app.repository.sa_repository.candle_repo import CandleRepository
-from app.repository.sa_repository.candle_span_repo import CandleSpanRepository
-from app.repository.sa_repository.security_repo import SecurityRepository
-from app.repository.sa_repository.unit_of_work import UOW
+from app.market_data_adapter import MarketDataAdapter
+from app.market_data_loader import MarketDataLoader
+from app.repository.sa_repository import (
+    UOW,
+    CandleRepository,
+    CandleSpanRepository,
+    SecurityRepository,
+)
 from app.use_cases.create_security import CreateSecurity
 from app.use_cases.load_candles import LoadCandles
 

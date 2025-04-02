@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import OperationalError
 
 from app.core.entities import Security
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ISecurityRepository
 from app.exceptions import DatabaseException
 from app.repository.sa_repository.base_repo import BaseRepository
 from app.repository.sa_repository.metadata import security_table

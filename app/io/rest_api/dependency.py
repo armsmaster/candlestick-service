@@ -1,8 +1,7 @@
 from typing import AsyncGenerator
 
 from app.core.logger import ILogger
-from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ICandleRepository, ISecurityRepository
 from app.dependency.prod import Container
 
 dependencies = Container()

@@ -1,3 +1,7 @@
+__all__ = [
+    "router",
+]
+
 from fastapi import APIRouter
 
 from app.io.rest_api.api.v1.candle import router as router_candle

@@ -6,7 +6,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.core.date_time import Timestamp
 from app.core.entities import CandleSpan, Security, Timeframe
-from app.core.repository.candle_span_repository import ICandleSpanRepository
+from app.core.repository import ICandleSpanRepository
 from app.exceptions import DatabaseException
 from app.repository.sa_repository.base_repo import BaseRepository
 from app.repository.sa_repository.metadata import candle_span_table, security_table
