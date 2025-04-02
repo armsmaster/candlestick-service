@@ -1,7 +1,8 @@
 from datetime import datetime
+from http import HTTPStatus
 
 import pytz
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.core.date_time import Timestamp
 from app.core.entities import Timeframe
@@ -9,6 +10,7 @@ from app.core.logger import ILogger
 from app.core.repository.candle_repository import ICandleRepository
 from app.core.repository.security_repository import ISecurityRepository
 from app.exceptions import DatabaseException
+from app.io.rest_api.api.v1 import HTTPErrorSchema
 from app.io.rest_api.api.v1.candle.schemas import CandleSchema
 from app.io.rest_api.dependency import (
     candle_repository_provider,
@@ -20,7 +22,10 @@ from app.use_cases.get_candles import GetCandles, GetCandlesRequest
 router = APIRouter(prefix="/candles")
 
 
-@router.get("/")
+@router.get(
+    "/",
+    responses={HTTPStatus.INTERNAL_SERVER_ERROR: {"model": HTTPErrorSchema}},
+)
 async def get_candles(
     request: Request,
     ticker: str,
@@ -58,6 +63,7 @@ async def get_candles(
         use_case_response = await use_case.execute(use_case_request)
     except DatabaseException as e:
         logger.error("error", exception=str(e))
+        return HTTPException(HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
     candles = [
         CandleSchema(
             id=candle.id,

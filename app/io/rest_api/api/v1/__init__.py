@@ -1,6 +1,12 @@
+__all__ = [
+    "router",
+    "HTTPErrorSchema",
+]
+
 from fastapi import APIRouter
 
 from app.io.rest_api.api.v1.candle import router as router_candle
+from app.io.rest_api.api.v1.schemas import HTTPErrorSchema
 from app.io.rest_api.api.v1.security import router as router_security
 
 router = APIRouter(prefix="/v1")
