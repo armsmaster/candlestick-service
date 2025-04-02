@@ -1,0 +1,2 @@
+class MarketDataSourceException(Exception):
+    pass
