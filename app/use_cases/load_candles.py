@@ -52,13 +52,6 @@ class LoadCandles(BaseUseCase):
 
     async def execute(self, request: LoadCandlesRequest) -> LoadCandlesResponse:
         """Execute."""
-        self.logger.debug(
-            "LoadCandles.execute",
-            security=request.security,
-            timeframe=request.timeframe,
-            time_from=request.time_from,
-            time_till=request.time_till,
-        )
         security = request.security
         mdl_request = MarketDataLoaderRequest(
             security=security,

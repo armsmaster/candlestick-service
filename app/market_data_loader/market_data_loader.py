@@ -37,9 +37,6 @@ class MarketDataLoader(IMarketDataLoader):
     async def load_candles(self, request: MarketDataLoaderRequest) -> None:
         """Load candles."""
         request_batches = await self._construct_batches(request)
-        self.logger.debug(
-            "MarketDataLoader.load_candles", n_batches=len(request_batches)
-        )
         if not request_batches:
             return
         await asyncio.gather(*[self._load_batch(rb) for rb in request_batches])
@@ -110,7 +107,6 @@ class MarketDataLoader(IMarketDataLoader):
 
     async def _load_batch(self, request: MarketDataLoaderRequest) -> None:
         """Load market data."""
-        self.logger.debug("MarketDataLoader._load_batch", request=str(request))
         md_request = MarketDataRequest(
             security=request.security,
             timeframe=request.timeframe,
@@ -119,4 +115,3 @@ class MarketDataLoader(IMarketDataLoader):
         )
         candles = await self.market_data_adapter.load(md_request)
         self._candles += candles
-        self.logger.debug("MarketDataLoader._load_batch finished")
