@@ -2,10 +2,12 @@ from typing import override
 
 from sqlalchemy import Connection, Row, or_, select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import OperationalError
 
 from app.core.date_time import Timestamp
 from app.core.entities import Candle, Security, Timeframe
 from app.core.repository.candle_repository import ICandleRepository
+from app.exceptions import DatabaseException
 from app.repository.sa_repository.base_repo import BaseRepository
 from app.repository.sa_repository.metadata import candle_table, security_table
 
@@ -71,14 +73,20 @@ class CandleRepository(BaseRepository, ICandleRepository):
             }
             for item in items
         ]
-        await self._connection.execute(insert_stmt, items_to_insert)
+        try:
+            await self._connection.execute(insert_stmt, items_to_insert)
+        except OperationalError as e:
+            raise DatabaseException(f"OperationalError: {str(e)}")
 
     @override
     async def remove(self, items: list[Candle]):
         statement = self.table.delete().where(
             or_(False, *[self.table.c["id"] == i.id for i in items])
         )
-        await self._connection.execute(statement)
+        try:
+            await self._connection.execute(statement)
+        except OperationalError as e:
+            raise DatabaseException(f"OperationalError: {str(e)}")
 
     @override
     def __getitem__(self, s):

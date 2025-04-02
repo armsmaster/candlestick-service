@@ -12,9 +12,11 @@ from sqlalchemy import (
     func,
     select,
 )
+from sqlalchemy.exc import OperationalError
 
 from app.core.entities import Entity
 from app.core.repository.base import IRepository
+from app.exceptions import DatabaseException
 
 
 @dataclass
@@ -77,7 +79,10 @@ class BaseRepository(IRepository):
     @override
     async def count(self) -> int:
         statement = self._construct_count()
-        result = await self._connection.execute(statement)
+        try:
+            result = await self._connection.execute(statement)
+        except OperationalError as e:
+            raise DatabaseException(f"OperationalError: {str(e)}")
         out = result.scalar_one()
         return out
 
@@ -90,7 +95,12 @@ class BaseRepository(IRepository):
     async def __anext__(self) -> Entity:
         if self._rows is None:
             statement = self._construct_select()
-            self._rows = await self._connection.execute(statement)
+
+            try:
+                self._rows = await self._connection.execute(statement)
+            except OperationalError as e:
+                raise DatabaseException(f"OperationalError: {str(e)}")
+
             self._rows: list[Row] = list(self._rows)
 
         if self.index < len(self._rows):

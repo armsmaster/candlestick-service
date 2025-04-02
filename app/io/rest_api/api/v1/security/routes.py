@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.core.logger import ILogger
 from app.core.repository.security_repository import ISecurityRepository
+from app.exceptions import DatabaseException
 from app.io.rest_api.api.v1.security.schemas import SecuritySchema
 from app.io.rest_api.dependency import logger_provider, security_repository_provider
 from app.use_cases.get_securities import GetSecurities, GetSecuritiesRequest
@@ -17,15 +18,18 @@ async def get_securities(
     security_repository: ISecurityRepository = Depends(security_repository_provider),
     logger: ILogger = Depends(logger_provider),
 ) -> list[SecuritySchema]:
-    logger.info(
-        "rest_api_request",
+    logger.bind(
         handle="get_securities",
         path=request.url.path,
         param_ticker=ticker,
         param_board=board,
     )
+    logger.info("rest_api_request")
     use_case = GetSecurities(security_repository)
     use_case_request = GetSecuritiesRequest(ticker=ticker, board=board)
-    use_case_response = await use_case.execute(use_case_request)
+    try:
+        use_case_response = await use_case.execute(use_case_request)
+    except DatabaseException as e:
+        logger.error("error", exception=str(e))
     securities = use_case_response.result
     return [SecuritySchema(**sec.__dict__) for sec in securities]

@@ -2,6 +2,7 @@ import asyncio
 from urllib.parse import urlencode
 
 import aiohttp
+import aiohttp.client_exceptions
 
 import app.market_data_adapter.constants as constants
 from app.core.date_time import Timestamp
@@ -11,6 +12,7 @@ from app.core.market_data_adapter import (
     MarketDataAdapterException,
     MarketDataRequest,
 )
+from app.exceptions import MarketDataSourceException
 
 
 class MarketDataAdapter(IMarketDataAdapter):
@@ -21,7 +23,14 @@ class MarketDataAdapter(IMarketDataAdapter):
     INTERVALS = constants.INTERVALS
 
     def __init__(self):
-        pass
+        self.security = None
+        self.time_from = None
+        self.time_till = None
+        self.timeframe = None
+        self._candles: list[CandleData] = None
+        self.market = None
+        self.interval = None
+        self.candles_set: set[CandleData] = None
 
     def _init(self, request: MarketDataRequest) -> None:
         self.security = request.security
@@ -84,10 +93,13 @@ class MarketDataAdapter(IMarketDataAdapter):
             queue.task_done()
 
     async def _request_get(self, url: str) -> dict:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url=url) as resp:
-                response_json = await resp.json()
-                return response_json
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url=url) as resp:
+                    response_json = await resp.json()
+                    return response_json
+        except aiohttp.client_exceptions.ClientConnectionError as e:
+            raise MarketDataSourceException(f"ClientConnectionError: {str(e)}")
 
     def _generate_url(self, index: int) -> str:
         url = "{a}/iss/{e}/{m}/{b}/{t}/candles.json".format(

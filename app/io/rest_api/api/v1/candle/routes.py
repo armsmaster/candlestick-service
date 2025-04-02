@@ -8,6 +8,7 @@ from app.core.entities import Timeframe
 from app.core.logger import ILogger
 from app.core.repository.candle_repository import ICandleRepository
 from app.core.repository.security_repository import ISecurityRepository
+from app.exceptions import DatabaseException
 from app.io.rest_api.api.v1.candle.schemas import CandleSchema
 from app.io.rest_api.dependency import (
     candle_repository_provider,
@@ -31,8 +32,7 @@ async def get_candles(
     candle_repository: ICandleRepository = Depends(candle_repository_provider),
     logger: ILogger = Depends(logger_provider),
 ) -> list[CandleSchema]:
-    logger.info(
-        "rest_api_request",
+    logger.bind(
         handle="get_candles",
         path=request.url.path,
         param_ticker=ticker,
@@ -41,6 +41,7 @@ async def get_candles(
         param_time_from=time_from,
         param_time_till=time_till,
     )
+    logger.info("rest_api_request")
     time_from = time_from.astimezone(pytz.UTC)
     time_till = time_till.astimezone(pytz.UTC)
     use_case_request = GetCandlesRequest(
@@ -53,7 +54,10 @@ async def get_candles(
     use_case = GetCandles(
         security_repo=security_repository, candle_repo=candle_repository
     )
-    use_case_response = await use_case.execute(use_case_request)
+    try:
+        use_case_response = await use_case.execute(use_case_request)
+    except DatabaseException as e:
+        logger.error("error", exception=str(e))
     candles = [
         CandleSchema(
             id=candle.id,
