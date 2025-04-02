@@ -19,6 +19,10 @@ from app.use_cases.base import (
 from app.use_cases.load_candles import LoadCandles, LoadCandlesRequest
 
 
+def yesterday() -> Timestamp:
+    return Timestamp.today() - 1
+
+
 @dataclass
 class UpdateCandlesEvent(UseCaseEvent):
     """UpdateCandles Event."""
@@ -31,7 +35,7 @@ class UpdateCandlesRequest(UseCaseRequest):
     """UpdateCandles Request."""
 
     time_from: Timestamp = Timestamp("2024-08-01")
-    time_till: Timestamp = Timestamp.today() - 1
+    time_till: Timestamp = field(default_factory=yesterday)
 
 
 @dataclass
