@@ -7,11 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.core.date_time import Timestamp
 from app.core.entities import Timeframe
 from app.core.logger import ILogger
-from app.core.repository.candle_repository import ICandleRepository
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ICandleRepository, ISecurityRepository
 from app.exceptions import DatabaseException
-from app.io.rest_api.api.v1 import HTTPErrorSchema
 from app.io.rest_api.api.v1.candle.schemas import CandleSchema
+from app.io.rest_api.api.v1.schemas import HTTPErrorSchema
 from app.io.rest_api.dependency import (
     candle_repository_provider,
     logger_provider,

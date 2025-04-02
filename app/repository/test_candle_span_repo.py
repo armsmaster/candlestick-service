@@ -3,9 +3,7 @@ from uuid import uuid4
 
 from app.core.date_time import Timestamp
 from app.core.entities import CandleSpan, Entity, Security, Timeframe
-from app.core.repository.base import IRepository
-from app.core.repository.candle_span_repository import ICandleSpanRepository
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ICandleSpanRepository, IRepository, ISecurityRepository
 from app.core.unit_of_work import IUnitOfWork
 
 

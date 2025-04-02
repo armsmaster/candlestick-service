@@ -3,9 +3,9 @@ from http import HTTPStatus
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.core.logger import ILogger
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ISecurityRepository
 from app.exceptions import DatabaseException
-from app.io.rest_api.api.v1 import HTTPErrorSchema
+from app.io.rest_api.api.v1.schemas import HTTPErrorSchema
 from app.io.rest_api.api.v1.security.schemas import SecuritySchema
 from app.io.rest_api.dependency import logger_provider, security_repository_provider
 from app.use_cases.get_securities import GetSecurities, GetSecuritiesRequest

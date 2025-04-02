@@ -2,7 +2,7 @@ from typing import override
 from uuid import UUID
 
 from app.core.entities import Security
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ISecurityRepository
 from app.repository.json_repository.base_repo import BaseRepository
 
 

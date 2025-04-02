@@ -6,7 +6,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.core.date_time import Timestamp
 from app.core.entities import Candle, Security, Timeframe
-from app.core.repository.candle_repository import ICandleRepository
+from app.core.repository import ICandleRepository
 from app.exceptions import DatabaseException
 from app.repository.sa_repository.base_repo import BaseRepository
 from app.repository.sa_repository.metadata import candle_table, security_table

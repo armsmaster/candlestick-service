@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from app.core.entities import Security
-from app.core.repository.security_repository import ISecurityRepository
+from app.core.repository import ISecurityRepository
 from app.use_cases.base import (
     BaseUseCase,
     UseCaseRequest,

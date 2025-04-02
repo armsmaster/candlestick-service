@@ -2,7 +2,8 @@ import json
 from os import path
 from typing import override
 
-from app.core.repository.base import Entity, IRepository
+from app.core.entities import Entity
+from app.core.repository import IRepository
 
 
 class BaseRepository(IRepository):
