@@ -11,6 +11,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - candlenet
 
   candlestick-service-rest-api:
     image: edwardgordin/candlestick-service
@@ -25,6 +27,9 @@ services:
     depends_on:
       candlestick-service-migrate:
         condition: service_completed_successfully
+    networks:
+      - candlenet
+      - nginx-net
 
   candlestick-service-task-scheduler:
     image: edwardgordin/candlestick-service
@@ -39,6 +44,8 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+    networks:
+      - candlenet
 
   candlestick-service-task-worker:
     image: edwardgordin/candlestick-service
@@ -53,6 +60,8 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+    networks:
+      - candlenet
 
   redis:
     image: redis:7.2
@@ -64,6 +73,8 @@ services:
       retries: 10
       start_period: 10s
       timeout: 5s
+    networks:
+      - candlenet
 
   db:
     image: postgres:16
@@ -85,6 +96,8 @@ services:
       interval: 1s
       timeout: 5s
       retries: 100
+    networks:
+      - candlenet
 
   nginx:
     image: nginx:latest
@@ -96,3 +109,9 @@ services:
         condition: service_started
     ports:
       - "80:80"
+    networks:
+      - nginx-net
+
+networks:
+  nginx-net:
+  candlenet:
