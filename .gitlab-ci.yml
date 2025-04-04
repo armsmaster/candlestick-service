@@ -9,6 +9,7 @@ before_script:
 Build:
   stage: build
   script:
+    - unset DOCKER_HOST
     - docker build -t edwardgordin/candlestick-service .
     - docker push edwardgordin/candlestick-service
   rules:
