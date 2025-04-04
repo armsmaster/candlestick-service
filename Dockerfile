@@ -14,3 +14,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt --no-cache-dir
 
 # copy project
 COPY ./app/ ./app/
+COPY ./db_schema/ ./db_schema/
