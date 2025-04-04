@@ -8,6 +8,9 @@ services:
     environment:
       - PG_HOST=db
       - PG_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
 
   candlestick-service-rest-api:
     image: edwardgordin/candlestick-service
@@ -19,6 +22,9 @@ services:
     environment:
       - PG_HOST=db
       - PG_PORT=5432
+    depends_on:
+      candlestick-service-migrate:
+        condition: service_completed_successfully
 
   candlestick-service-task-scheduler:
     image: edwardgordin/candlestick-service
@@ -28,6 +34,11 @@ services:
     environment:
       - PG_HOST=db
       - PG_PORT=5432
+    depends_on:
+      candlestick-service-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
 
   candlestick-service-task-worker:
     image: edwardgordin/candlestick-service
@@ -37,6 +48,11 @@ services:
     environment:
       - PG_HOST=db
       - PG_PORT=5432
+    depends_on:
+      candlestick-service-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
 
   redis:
     image: redis:7.2
@@ -64,6 +80,11 @@ services:
       - "${PG_PORT}:5432"
     volumes:
       - ./db-data/:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-h", "db", "-p", "5432", "-U", "${POSTGRES_USER}" ]
+      interval: 1s
+      timeout: 5s
+      retries: 100
 
   nginx:
     image: nginx:latest
@@ -71,6 +92,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/configs:/etc/nginx/conf.d:ro
     depends_on:
-      - candlestick-service-rest-api
+      candlestick-service-rest-api:
+        condition: service_started
     ports:
       - "80:80"
