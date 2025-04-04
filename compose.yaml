@@ -2,7 +2,12 @@ services:
 
   candlestick-service-migrate:
     image: edwardgordin/candlestick-service
-    command: "cd db_schema && alembic upgrade head"
+    command: sh -c "cd ./db_schema && alembic upgrade head"
+    env_file:
+      - ./.env
+    environment:
+      - PG_HOST=db
+      - PG_PORT=5432
 
   candlestick-service-rest-api:
     image: edwardgordin/candlestick-service
