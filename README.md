@@ -1,3 +1,13 @@
+- [О проекте](#о-проекте)
+- [Архитектура приложения](#архитектура-приложения)
+  - [Архитектурная схема компонентов](#архитектурная-схема-компонентов)
+- [CI/CD](#cicd)
+- [Live demo](#live-demo)
+- [Техническая информация](#техническая-информация)
+  - [Запуск в локальном окружении](#запуск-в-локальном-окружении)
+  - [Запуск тестов](#запуск-тестов)
+
+
 # О проекте
 
 Данный микросервис решает следующую задачу: собирать и хранить данные о "свечках" [1] по ценным бумагам, обращающимся на Московской бирже, а также предоставлять доступ другим сервисам системы к этим данным.
@@ -12,20 +22,34 @@
 
 # Архитектура приложения
 
-Архитектурная схема компонентов:
+## Архитектурная схема компонентов
 
 <img src="https://storage.yandexcloud.net/armsmaster/candlestick-service-architecture.drawio.png">
 
 В формате pdf: https://storage.yandexcloud.net/armsmaster/candlestick-service-architecture.drawio.pdf
 
-# Workdir
+# CI/CD
 
-`.`
+Автоматизированная сборка и деплой live demo настроены для self-hosted инстанса гитлаба: https://gitlab.armsmaster.ru/r-wand/candlestick-service.
 
-# Test
+Пайплайны описаны в `.gitlab-ci.yml`.
 
-`pytest app`
+# Live demo
 
-or
+https://candlestick.armsmaster.ru/docs
 
-`pytest app -vvs` (debug)
+# Техническая информация
+
+## Запуск в локальном окружении
+
+Workdir: `.`
+
+```
+docker compose up -d -- build
+```
+
+## Запуск тестов
+
+```
+pytest app
+```
