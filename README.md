@@ -2,7 +2,7 @@
 
 Данный микросервис решает следующую задачу: собирать и хранить данные о "свечках" [1] по ценным бумагам, обращающимся на Московской бирже, а также предоставлять доступ другим сервисам системы к этим данным.
 
-[1] https://ru.wikipedia.org/wiki/%D0%AF%D0%BF%D0%BE%D0%BD%D1%81%D0%BA%D0%B8%D0%B5_%D1%81%D0%B2%D0%B5%D1%87%D0%B8
+[1] [https://ru.wikipedia.org/wiki/Японские_свечи](https://ru.wikipedia.org/wiki/%D0%AF%D0%BF%D0%BE%D0%BD%D1%81%D0%BA%D0%B8%D0%B5_%D1%81%D0%B2%D0%B5%D1%87%D0%B8)
 
 Основной функционал:
 
@@ -16,7 +16,7 @@
 
 <img src="https://storage.yandexcloud.net/armsmaster/candlestick-service-architecture.drawio.png">
 
-А формате pdf: https://storage.yandexcloud.net/armsmaster/candlestick-service-architecture.drawio.pdf
+В формате pdf: https://storage.yandexcloud.net/armsmaster/candlestick-service-architecture.drawio.pdf
 
 # Workdir
 
