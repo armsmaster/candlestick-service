@@ -135,5 +135,5 @@ docker compose run --rm candlestick-service-cli python -m app.io.cli update-cand
 ## Запуск тестов
 
 ```
-pytest app
+docker compose run --rm candlestick-service-cli pytest app
 ```
