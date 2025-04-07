@@ -2,8 +2,15 @@ image: docker:28
 
 stages:
   - build
+  - deploy
 
 before_script:
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - eval $(ssh-agent -s)
+  - SSH_PRIVATE_KEY="$(echo $NODE_01_SSH_KEY | base64 -d)"
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
   - echo -n $DOCKERHUB_TOKEN | docker login -u edwardgordin --password-stdin
 
 Build:
@@ -13,6 +20,11 @@ Build:
     - docker build -t edwardgordin/candlestick-service .
     - docker push edwardgordin/candlestick-service
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+Deploy:
+  stage: deploy
+  script:
+    - ssh -t $NODE_01_USER@$NODE_01_HOST "cd candlestick-service && sh deploy.sh"
+  rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
