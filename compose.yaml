@@ -1,13 +1,11 @@
 services:
 
   candlestick-service-migrate:
-    image: edwardgordin/candlestick-service
+    build: .
+    image: candlestick-app
     command: sh -c "cd ./db_schema && alembic upgrade head"
     env_file:
       - ./.env
-    environment:
-      - PG_HOST=db
-      - PG_PORT=5432
     depends_on:
       db:
         condition: service_healthy
@@ -15,15 +13,24 @@ services:
       - candlenet
 
   candlestick-service-rest-api:
-    image: edwardgordin/candlestick-service
+    image: candlestick-app
     command: "gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.io.rest_api.main:app -b 0.0.0.0:8000"
     expose:
       - "8000"
     env_file:
       - ./.env
-    environment:
-      - PG_HOST=db
-      - PG_PORT=5432
+    depends_on:
+      candlestick-service-migrate:
+        condition: service_completed_successfully
+    networks:
+      - candlenet
+      - nginx-net
+
+  candlestick-service-cli:
+    image: candlestick-app
+    command: "sh"
+    env_file:
+      - ./.env
     depends_on:
       candlestick-service-migrate:
         condition: service_completed_successfully
@@ -32,13 +39,10 @@ services:
       - nginx-net
 
   candlestick-service-task-scheduler:
-    image: edwardgordin/candlestick-service
+    image: candlestick-app
     command: "taskiq scheduler app.tasks:scheduler"
     env_file:
       - ./.env
-    environment:
-      - PG_HOST=db
-      - PG_PORT=5432
     depends_on:
       candlestick-service-migrate:
         condition: service_completed_successfully
@@ -48,13 +52,10 @@ services:
       - candlenet
 
   candlestick-service-task-worker:
-    image: edwardgordin/candlestick-service
+    image: candlestick-app
     command: "taskiq worker app.tasks:broker"
     env_file:
       - ./.env
-    environment:
-      - PG_HOST=db
-      - PG_PORT=5432
     depends_on:
       candlestick-service-migrate:
         condition: service_completed_successfully
@@ -80,15 +81,8 @@ services:
     image: postgres:16
     env_file:
       - ./.env
-    environment:
-      - POSTGRES_PASSWORD
-      - POSTGRES_USER
-      - POSTGRES_DB
-      - PGDATA
     expose:
-      - ${PG_PORT}
-    ports:
-      - "${PG_PORT}:5432"
+      - "5432"
     volumes:
       - ./db-data/:/var/lib/postgresql/data
     healthcheck:
