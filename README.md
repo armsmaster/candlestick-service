@@ -13,6 +13,7 @@
 - [Live demo](#live-demo)
 - [Техническая информация](#техническая-информация)
   - [Запуск в локальном окружении](#запуск-в-локальном-окружении)
+  - [Использование CLI](#использование-cli)
   - [Запуск тестов](#запуск-тестов)
 
 
@@ -111,6 +112,24 @@ Workdir: `.`
 
 ```
 docker compose up -d -- build
+```
+
+Swagger UI доступен по адресу: http://localhost/docs
+
+## Использование CLI
+
+Примеры:
+
+```
+docker compose run --rm candlestick-service-cli python -m app.io.cli --help
+```
+
+```
+docker compose run --rm candlestick-service-cli python -m app.io.cli create-security SU26238RMFS4 TQOB
+```
+
+```
+docker compose run --rm candlestick-service-cli python -m app.io.cli update-candles
 ```
 
 ## Запуск тестов
