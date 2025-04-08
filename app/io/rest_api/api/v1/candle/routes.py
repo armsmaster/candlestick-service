@@ -14,6 +14,7 @@ from app.io.rest_api.api.v1.schemas import HTTPErrorSchema
 from app.io.rest_api.dependency import (
     candle_repository_provider,
     logger_provider,
+    pagination_parameters,
     security_repository_provider,
 )
 from app.use_cases.get_candles import GetCandles, GetCandlesRequest
@@ -32,6 +33,7 @@ async def get_candles(
     timeframe: Timeframe,
     time_from: datetime,
     time_till: datetime,
+    pagination_parameters: dict = Depends(pagination_parameters),
     security_repository: ISecurityRepository = Depends(security_repository_provider),
     candle_repository: ICandleRepository = Depends(candle_repository_provider),
     logger: ILogger = Depends(logger_provider),
@@ -54,6 +56,8 @@ async def get_candles(
         timeframe=timeframe,
         time_from=Timestamp(time_from),
         time_till=Timestamp(time_till),
+        page_number=pagination_parameters["page_number"],
+        page_size=pagination_parameters["page_size"],
     )
     use_case = GetCandles(
         security_repo=security_repository, candle_repo=candle_repository
