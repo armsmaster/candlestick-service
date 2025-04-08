@@ -18,6 +18,8 @@ class GetCandlesRequest(UseCaseRequest):
     timeframe: Timeframe
     time_from: Timestamp
     time_till: Timestamp
+    page_number: int
+    page_size: int
 
 
 @dataclass
@@ -49,6 +51,10 @@ class GetCandles(BaseUseCase):
         repo = repo.filter_by_timeframe(request.timeframe)
         repo = repo.filter_by_timestamp_gte(request.time_from)
         repo = repo.filter_by_timestamp_lte(request.time_till)
+
+        idx_from = (request.page_number - 1) * request.page_size
+        idx_till = idx_from + request.page_size
+        repo = repo[idx_from, idx_till]
 
         candles = [candle async for candle in repo]
         response = GetCandlesResponse(result=candles)
