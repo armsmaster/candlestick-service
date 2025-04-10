@@ -10,7 +10,7 @@ from app.io.rest_api.api.v1.security.schemas import SecuritySchema
 from app.io.rest_api.dependency import logger_provider, security_repository_provider
 from app.use_cases.get_securities import GetSecurities, GetSecuritiesRequest
 
-router = APIRouter(prefix="/securities")
+router = APIRouter(prefix="/securities", tags=["securities"])
 
 
 @router.get(

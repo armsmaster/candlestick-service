@@ -19,7 +19,7 @@ from app.io.rest_api.dependency import (
 )
 from app.use_cases.get_candles import GetCandles, GetCandlesRequest
 
-router = APIRouter(prefix="/candles")
+router = APIRouter(prefix="/candles", tags=["candles"])
 
 
 @router.get(
